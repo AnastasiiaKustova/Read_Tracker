@@ -2,6 +2,8 @@ package com.example.readtracker.android.data.repository
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.BookCollection
 import com.example.readtracker.android.domain.entity.MainScreenItem
 import com.example.readtracker.android.domain.entity.MainScreenItem.Companion.default
 import com.example.readtracker.android.domain.repository.MainScreenRepository
@@ -23,8 +25,24 @@ class MainScreenRepositoryImpl @Inject constructor(
     private val repositoryJob = SupervisorJob()
     private val repositoryScope = CoroutineScope(Dispatchers.IO + repositoryJob)
 
-    private val _gameState = MutableStateFlow(default())
-    override val mainScreenFlow: Flow<MainScreenItem> = _gameState.asStateFlow()
+    private val _booksState = MutableStateFlow(default())
+    override val mainScreenFlow: Flow<MainScreenItem> = _booksState.asStateFlow()
+
+    override suspend fun addBook() {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getBooks(): List<Book> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun addCollection() {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getCollections(): List<BookCollection> {
+        TODO("Not yet implemented")
+    }
 
     init {
         repositoryScope.launch {
