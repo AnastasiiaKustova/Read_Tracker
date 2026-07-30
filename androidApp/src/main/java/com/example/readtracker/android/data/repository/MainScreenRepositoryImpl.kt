@@ -32,7 +32,7 @@ class MainScreenRepositoryImpl @Inject constructor(
         TODO("Not yet implemented")
     }
 
-    override suspend fun getBooks(): List<Book> {
+    override suspend fun getBooks(): Set<Book> {
         TODO("Not yet implemented")
     }
 
@@ -40,7 +40,7 @@ class MainScreenRepositoryImpl @Inject constructor(
         TODO("Not yet implemented")
     }
 
-    override suspend fun getCollections(): List<BookCollection> {
+    override suspend fun getCollections(): Set<BookCollection> {
         TODO("Not yet implemented")
     }
 

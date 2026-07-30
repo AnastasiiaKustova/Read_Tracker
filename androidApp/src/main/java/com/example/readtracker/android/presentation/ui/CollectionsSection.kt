@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.example.readtracker.android.domain.entity.BookCollection
 
 @Composable
-fun CollectionsSection(collectionList: List<BookCollection>, modifier: Modifier = Modifier) {
+fun CollectionsSection(collectionSet: Set<BookCollection>, modifier: Modifier = Modifier) {
 
     Column(modifier = modifier.fillMaxWidth()) {
         // Шапка секции: Заголовок и кнопка «+»
@@ -34,14 +34,14 @@ fun CollectionsSection(collectionList: List<BookCollection>, modifier: Modifier 
                 text = "Коллекции",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black
+                color = Color.White
             )
 
             IconButton(onClick = { /* TODO: Создать новую коллекцию */ }) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Добавить коллекцию",
-                    tint = Color.Black
+                    tint = Color.White
                 )
             }
         }
@@ -53,7 +53,7 @@ fun CollectionsSection(collectionList: List<BookCollection>, modifier: Modifier 
             horizontalArrangement = Arrangement.spacedBy(8.dp)
            // horizontalArrangement = Arrangement.dpToPx(12.dp).let { Arrangement.spacedBy(12.dp) } // Расстояние между карточками
         ) {
-            items(collectionList) { collection ->
+            items(collectionSet.toList()) { collection ->
                 CollectionCard(
                     title = collection.title,
                     bookCount = collection.books.size
@@ -66,12 +66,12 @@ fun CollectionsSection(collectionList: List<BookCollection>, modifier: Modifier 
 @Preview
 @Composable
 fun CollectionsSectionTest(){
-    val dummyCollections = listOf(
+    val dummyCollections = setOf(
         // Тестовые данные под ваш макет
-        BookCollection("1", "Любимые", emptyList()),
-        BookCollection("2", "Какая-то ко...", emptyList()),
-        BookCollection("3", "Прочитано", emptyList()),
-        BookCollection("4", "Хочу купить", emptyList())
+        BookCollection("1", "Любимые", emptySet()),
+        BookCollection("2", "Какая-то ко...", emptySet()),
+        BookCollection("3", "Прочитано", emptySet()),
+        BookCollection("4", "Хочу купить", emptySet())
     )
     CollectionsSection(dummyCollections)
 }

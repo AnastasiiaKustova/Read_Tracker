@@ -18,12 +18,14 @@ import com.example.readtracker.android.core.formatWithSpace
 import org.jetbrains.annotations.TestOnly
 import kotlin.math.round
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookCard(
     title: String,
     author: String,
     currentPage: Int,
     totalPages: Int,
+    onCardClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val progress = if (totalPages > 0) currentPage.toFloat() / totalPages else 0f
@@ -35,6 +37,7 @@ fun BookCard(
             .padding(top = 24.dp)
     ) {
         Card(
+            onClick = onCardClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(180.dp),
@@ -141,6 +144,6 @@ fun BookCardTest(){
         "Очень длинное название",
         "Автор Такойто",
         12345,
-        15456
+        15456, {}
     )
 }

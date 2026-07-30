@@ -1,20 +1,15 @@
 package com.example.readtracker.android.presentation.mainScreen
 
-import androidx.compose.foundation.background
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.BookCollection
 import com.example.readtracker.android.domain.entity.BookStatus
@@ -25,44 +20,50 @@ import com.example.readtracker.android.presentation.ui.ReadingStatusSection
 @Composable
 fun MainScreenContent(component: MainScreenComponent) {
     MainScreen(
-        onCloseAppClick = { component.onCloseAppClick() },
+        onBookClicked = {bookId ->
+            Log.d("APP_DEBUG", "1. UI: Кликнули на книгу с ID = $bookId. Передаем в компонент.")
+            component.onBookClick(bookId) },
     )
 }
 
 @Composable
 private fun MainScreen(
-    onCloseAppClick: () -> Unit,
+    onBookClicked: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White),
+            .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
 
         //Spacer(modifier = Modifier.height(20.dp))
 
-        val dummyBooks = listOf(
-            Book("0","Название в две строчки или может в три и вс...", "Автор Такойто", "",12345, 15456, BookStatus.READING),
-            Book("1","Мастер и Маргарита", "Михаил Булгаков", "",200, 450, BookStatus.READING),
-            Book("2","Преступление и наказание", "Федор Достоевский", "",50, 600, BookStatus.READING)
+        val dummyBooks = setOf(
+            Book("0","Название в две строчки или может в три и вс...", "Автор Такойто", "",12345, 15456, 0, BookStatus.READING),
+            Book("1","Мастер и Маргарита", "Михаил Булгаков", "",200, 450, 0, BookStatus.READING),
+            Book("2","Преступление и наказание", "Федор Достоевский", "",50, 600, 0, BookStatus.READING)
         )
 
-        BooksCarousel(dummyBooks)
+        BooksCarousel(
+            dummyBooks,
+            onBookClick = { bookId ->
+            // Прокидываем клик на самый верх в RootComponent
+            onBookClicked(bookId)
+        })
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        val dummyCollections = listOf(
+        val dummyCollections = setOf(
             // Тестовые данные под ваш макет
             BookCollection("1", "Любимые", dummyBooks),
-            BookCollection("2", "Какая-то ко...", emptyList()),
-            BookCollection("3", "Прочитано", emptyList()),
-            BookCollection("4", "Хочу купить", emptyList())
+            BookCollection("2", "Какая-то ко...", emptySet()),
+            BookCollection("3", "Прочитано", emptySet()),
+            BookCollection("4", "Хочу купить", emptySet())
         )
         CollectionsSection(dummyCollections)
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         ReadingStatusSection(
             onStatusClick = {},

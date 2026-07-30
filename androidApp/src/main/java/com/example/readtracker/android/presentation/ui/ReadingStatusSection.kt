@@ -26,7 +26,7 @@ fun ReadingStatusSection(
             text = "По статусу чтения",
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.Black,
+            color = Color.White,
             modifier = Modifier.padding(vertical = 12.dp)
         )
 

@@ -9,27 +9,21 @@ import com.example.readtracker.android.presentation.mainScreen.MainScreenStore.L
 import com.example.readtracker.android.presentation.mainScreen.MainScreenStore.State
 import javax.inject.Inject
 
-interface MainScreenStore: Store<Intent, State, Label> {
-
+interface MainScreenStore : Store<Intent, State, Label> {
     sealed interface Intent {
-
-        data object ClickCloseApp : Intent
-
+        data class ClickBook(val bookId: String) : Intent
     }
 
     data object State
 
     sealed interface Label {
-
-        data object ClickCloseApp : Label
-
+        data class ClickBook(val bookId: String) : Label
     }
 }
 
 class MainScreenStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
 ) {
-
     fun create(): MainScreenStore =
         object : MainScreenStore, Store<Intent, State, Label> by storeFactory.create(
             name = "MainScreenStore",
@@ -45,7 +39,10 @@ class MainScreenStoreFactory @Inject constructor(
     private inner class ExecutorImpl : CoroutineExecutor<Intent, Nothing, State, Msg, Label>() {
         override fun executeIntent(intent: Intent) {
             when (intent) {
-                Intent.ClickCloseApp -> publish(Label.ClickCloseApp)
+                is Intent.ClickBook -> {
+                    // Теперь публикация Label отработает без рантайм конфликтов
+                    publish(Label.ClickBook(intent.bookId))
+                }
             }
         }
     }
