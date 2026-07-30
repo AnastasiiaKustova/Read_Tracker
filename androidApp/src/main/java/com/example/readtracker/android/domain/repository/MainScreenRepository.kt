@@ -10,9 +10,9 @@ interface MainScreenRepository {
 
     suspend fun addBook()
 
-    suspend fun getBooks(): List<Book>
+    suspend fun getBooks(): Set<Book>
 
     suspend fun addCollection()
 
-    suspend fun getCollections(): List<BookCollection>
+    suspend fun getCollections(): Set<BookCollection>
 }

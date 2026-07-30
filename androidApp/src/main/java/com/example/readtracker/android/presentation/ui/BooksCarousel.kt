@@ -1,5 +1,7 @@
 package com.example.readtracker.android.presentation.ui
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,10 +16,10 @@ import com.example.readtracker.android.domain.entity.BookStatus
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BooksCarousel(bookList: List<Book>, modifier: Modifier = Modifier) {
+fun BooksCarousel(bookSet: Set<Book>, onBookClick: (String) -> Unit, modifier: Modifier = Modifier) {
 
 
-    val pagerState = rememberPagerState(pageCount = { bookList.size })
+    val pagerState = rememberPagerState(pageCount = { bookSet.size })
 
     HorizontalPager(
         state = pagerState,
@@ -27,13 +29,14 @@ fun BooksCarousel(bookList: List<Book>, modifier: Modifier = Modifier) {
         // pageSpacing задает расстояние между самими карточками
         pageSpacing = 12.dp
     ) { page ->
-        val book = bookList[page]
+        val book = bookSet.elementAt(page)
 
         BookCard(
             title = book.title,
             author = book.author,
             currentPage = book.currentPage,
-            totalPages = book.totalPages
+            totalPages = book.totalPages,
+            onCardClick = { onBookClick(book.id) }
         )
     }
 }
@@ -42,11 +45,11 @@ fun BooksCarousel(bookList: List<Book>, modifier: Modifier = Modifier) {
 @Composable
 fun BooksCarouselTest(){
     // Тестовый список данных
-    val dummyBooks = listOf(
-        Book("0","Название в две строчки или может в три и вс...", "Автор Такойто", "",12345, 15456, BookStatus.READING),
-        Book("1","Мастер и Маргарита", "Михаил Булгаков", "",200, 450, BookStatus.READING),
-        Book("2","Преступление и наказание", "Федор Достоевский", "",50, 600, BookStatus.READING)
+    val dummyBooks = setOf(
+        Book("0","Название в две строчки или может в три и вс...", "Автор Такойто", "",12345, 15456, 0, BookStatus.READING),
+        Book("1","Мастер и Маргарита", "Михаил Булгаков", "",200, 450, 0, BookStatus.READING),
+        Book("2","Преступление и наказание", "Федор Достоевский", "",50, 600, 0, BookStatus.READING)
     )
 
-    BooksCarousel(dummyBooks)
+    BooksCarousel(dummyBooks, {})
 }

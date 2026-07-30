@@ -7,5 +7,5 @@ import javax.inject.Inject
 class GetCollectionsUseCase @Inject constructor(
     private val repository: MainScreenRepository
 ) {
-    suspend operator fun invoke() : List<BookCollection> = repository.getCollections()
+    suspend operator fun invoke() : Set<BookCollection> = repository.getCollections()
 }

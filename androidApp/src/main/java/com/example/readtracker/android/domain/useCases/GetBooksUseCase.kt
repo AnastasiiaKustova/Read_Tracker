@@ -7,5 +7,5 @@ import javax.inject.Inject
 class GetBooksUseCase @Inject constructor(
     private val repository: MainScreenRepository
 ) {
-    suspend operator fun invoke() : List<Book> = repository.getBooks()
+    suspend operator fun invoke() : Set<Book> = repository.getBooks()
 }

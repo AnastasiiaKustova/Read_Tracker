@@ -13,6 +13,7 @@ decompose = "3.2.2"
 mvikotlin = "4.4.0"
 dagger = "2.60.1"
 ksp = "2.1.0-1.0.29"
+cronetEmbedded = "143.7445.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -35,6 +36,7 @@ mvikotlin = { group = "com.arkivanov.mvikotlin", name = "mvikotlin", version.ref
 mvikotlin-main = { group = "com.arkivanov.mvikotlin", name = "mvikotlin-main", version.ref = "mvikotlin" }
 mvikotlin-coroutines = { group = "com.arkivanov.mvikotlin", name = "mvikotlin-extensions-coroutines", version.ref = "mvikotlin" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+cronet-embedded = { group = "org.chromium.net", name = "cronet-embedded", version.ref = "cronetEmbedded" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
