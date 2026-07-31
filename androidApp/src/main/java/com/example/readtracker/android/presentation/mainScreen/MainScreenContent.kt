@@ -48,9 +48,9 @@ private fun MainScreen(
         BooksCarousel(
             dummyBooks,
             onBookClick = { bookId ->
-            // Прокидываем клик на самый верх в RootComponent
-            onBookClicked(bookId)
-        })
+                onBookClicked(bookId)
+            }
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
 

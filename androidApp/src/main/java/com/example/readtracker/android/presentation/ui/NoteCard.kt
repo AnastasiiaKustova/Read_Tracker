@@ -15,10 +15,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.readtracker.android.domain.entity.Note
 import androidx.compose.runtime.key
+import androidx.compose.ui.text.font.FontStyle
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteCard(
     note: Note,
+    onCardClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // 1. Внешний Box дает "воздух" сверху для выступающих тегов
@@ -30,10 +33,11 @@ fun NoteCard(
     ) {
         // 2. Основная серая карточка заметки
         Card(
+            onClick = onCardClick,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFE5E5E5) // Серый фон
+                containerColor = Color(0xFFE5E5E5) // Серый фон не меняется
             )
         ) {
             Column(
@@ -44,15 +48,41 @@ fun NoteCard(
                 // Отступ сверху внутри карточки, чтобы текст не упирался в теги
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Текст цитаты / заметки
-                Text(
-                    text = note.text,
-                    fontSize = 16.sp,
-                    color = Color.Black,
-                    lineHeight = 22.sp,
-                    maxLines = 4, // Задаем ограничение строк с троеточием
-                    overflow = TextOverflow.Ellipsis
-                )
+                // Проверяем, есть ли цитата в этой заметке
+                if (note.quoteText != null) {
+                    // Текст цитаты: выделен кавычками, курсивом, темно-серым цветом и строго 2 строки
+                    Text(
+                        text = "“${note.quoteText}”",
+                        fontSize = 15.sp,
+                        fontStyle = FontStyle.Italic,
+                        color = Color(0xFF555555), // Более приглушенный цвет для цитаты
+                        lineHeight = 20.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp)) // Отступ между цитатой и мыслями
+
+                    // Текст самой заметки (комментария пользователя) — строго 2 строки
+                    Text(
+                        text = note.userComment, // Ваше поле личного комментария пользователя
+                        fontSize = 16.sp,
+                        color = Color.Black,
+                        lineHeight = 22.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                } else {
+                    // Если цитаты нет, отдаем все 4 строки под обычный текст заметки
+                    Text(
+                        text = note.userComment,
+                        fontSize = 16.sp,
+                        color = Color.Black,
+                        lineHeight = 22.sp,
+                        maxLines = 4,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
@@ -91,7 +121,6 @@ fun NoteCard(
                 }
             } else {
                 note.tags.toList().forEach { tag ->
-                    // Обертываем в функцию key для оптимизации Compose
                     key(tag.id) {
                         Box(
                             modifier = Modifier
