@@ -23,12 +23,18 @@ fun MainScreenContent(component: MainScreenComponent) {
         onBookClicked = {bookId ->
             Log.d("APP_DEBUG", "1. UI: Кликнули на книгу с ID = $bookId. Передаем в компонент.")
             component.onBookClick(bookId) },
+        onCollectionClicked = {collectionId ->
+            component.onCollectionClick(collectionId) },
+        onBookStatusClicked = {bookStatus ->
+            component.onCollectionClick(bookStatus) },
     )
 }
 
 @Composable
 private fun MainScreen(
     onBookClicked: (String) -> Unit,
+    onCollectionClicked: (String) -> Unit,
+    onBookStatusClicked: (BookStatus) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -48,9 +54,9 @@ private fun MainScreen(
         BooksCarousel(
             dummyBooks,
             onBookClick = { bookId ->
-            // Прокидываем клик на самый верх в RootComponent
-            onBookClicked(bookId)
-        })
+                onBookClicked(bookId)
+            }
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -61,12 +67,18 @@ private fun MainScreen(
             BookCollection("3", "Прочитано", emptySet()),
             BookCollection("4", "Хочу купить", emptySet())
         )
-        CollectionsSection(dummyCollections)
+        CollectionsSection(
+            collectionSet = dummyCollections,
+            onCollectionClick = { collectionId ->
+                onCollectionClicked(collectionId)
+            })
 
         Spacer(modifier = Modifier.height(12.dp))
 
         ReadingStatusSection(
-            onStatusClick = {},
+            onStatusClick = { bookStatus ->
+                onBookStatusClicked(bookStatus)
+            },
         )
 
     }

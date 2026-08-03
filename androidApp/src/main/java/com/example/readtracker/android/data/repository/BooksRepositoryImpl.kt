@@ -4,9 +4,10 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.BookCollection
+import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.MainScreenItem
 import com.example.readtracker.android.domain.entity.MainScreenItem.Companion.default
-import com.example.readtracker.android.domain.repository.MainScreenRepository
+import com.example.readtracker.android.domain.repository.BooksRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,10 +18,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class MainScreenRepositoryImpl @Inject constructor(
-    private val dataStore: DataStore<Preferences>,
-    private val gson: Gson
-) : MainScreenRepository {
+class BooksRepositoryImpl @Inject constructor(
+) : BooksRepository {
 
     private val repositoryJob = SupervisorJob()
     private val repositoryScope = CoroutineScope(Dispatchers.IO + repositoryJob)
@@ -32,12 +31,20 @@ class MainScreenRepositoryImpl @Inject constructor(
         TODO("Not yet implemented")
     }
 
-    override suspend fun getBooks(): Set<Book> {
-        TODO("Not yet implemented")
+    override suspend fun getBook(id: String): Book {
+        return Book.test()
+    }
+
+    override suspend fun getBooks(collectionId: String?, bookStatus: BookStatus?): Set<Book> {
+        return BookCollection.test().books
     }
 
     override suspend fun addCollection() {
         TODO("Not yet implemented")
+    }
+
+    override suspend fun getCollection(id: String): BookCollection {
+        return BookCollection.test()
     }
 
     override suspend fun getCollections(): Set<BookCollection> {

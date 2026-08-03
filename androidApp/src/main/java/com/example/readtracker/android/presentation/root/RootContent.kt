@@ -5,7 +5,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -14,10 +19,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.BottomTab
-import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreen
+import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenContent
+import com.example.readtracker.android.presentation.bookListScreen.BookListScreenContent
 import com.example.readtracker.android.presentation.mainScreen.MainScreenContent
+import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailScreenContent
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenContent
 import com.example.readtracker.android.presentation.profileScreen.ProfileScreenContent
 import com.example.readtracker.android.presentation.statsScreen.StatsScreenContent
@@ -34,8 +40,10 @@ fun RootContent(component: RootComponent) {
         is RootComponent.Child.MainScreen -> BottomTab.MAIN
         is RootComponent.Child.BookDetail -> BottomTab.MAIN
         is RootComponent.Child.NoteScreen -> BottomTab.NOTES
+        is RootComponent.Child.NoteDetail -> BottomTab.NOTES
         is RootComponent.Child.StatsScreen -> BottomTab.STATS
         is RootComponent.Child.ProfileScreen -> BottomTab.PROFILE
+        is RootComponent.Child.BookList -> BottomTab.MAIN
     }
 
     AppTheme {
@@ -92,11 +100,9 @@ fun RootContent(component: RootComponent) {
                         is RootComponent.Child.NoteScreen -> NoteScreenContent(component = instance.component)
                         is RootComponent.Child.StatsScreen -> StatsScreenContent(component = instance.component)
                         is RootComponent.Child.ProfileScreen -> ProfileScreenContent(component = instance.component)
-                        is RootComponent.Child.BookDetail -> {
-                            BookDetailScreen(
-                                book = Book.test()
-                            )
-                        }
+                        is RootComponent.Child.BookDetail -> BookDetailScreenContent(component = instance.component)
+                        is RootComponent.Child.NoteDetail -> NoteDetailScreenContent(component = instance.component)
+                        is RootComponent.Child.BookList -> BookListScreenContent(component = instance.component)
                     }
                 }
             }

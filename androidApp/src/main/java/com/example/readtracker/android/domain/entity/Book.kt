@@ -15,11 +15,11 @@ data class Book(
             id = "01",
             title = "Очень длинное название",
             author = "Автор Такойто",
-            description = "",
+            description = "Очень длинное описание про книгу. Прям очень длинное описание про книгу. Настолько что занимает прям очень много строчек.",
             currentPage = 120, // Поставил реальное число, чтобы прогресс-бар не улетал в космос
             totalPages = 400,
             quotesCount = 1,
-            bookStatus = BookStatus.READING
+            bookStatus = BookStatus.FINISHED
         )
     }
 }

@@ -5,13 +5,22 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.popTo
 import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.value.Value
+import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.BottomTab
+import com.example.readtracker.android.domain.entity.Note
+import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenComponentImpl
+import com.example.readtracker.android.presentation.bookListScreen.BookListScreenComponentImpl
 import com.example.readtracker.android.presentation.mainScreen.MainScreenComponentImpl
+import com.example.readtracker.android.presentation.mainScreen.MainScreenStore
+import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailScreenComponentImpl
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenComponentImpl
 import com.example.readtracker.android.presentation.profileScreen.ProfileScreenComponentImpl
+import com.example.readtracker.android.presentation.root.RootComponent.Child.*
 import com.example.readtracker.android.presentation.statsScreen.StatsScreenComponentImpl
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -24,6 +33,9 @@ class RootComponentImpl @AssistedInject constructor(
     private val noteScreenComponentImplFactory: NoteScreenComponentImpl.Factory,
     private val statsScreenComponentImplFactory: StatsScreenComponentImpl.Factory,
     private val profileScreenComponentImplFactory: ProfileScreenComponentImpl.Factory,
+    private val bookDetailScreenComponentImplFactory: BookDetailScreenComponentImpl.Factory,
+    private val noteDetailScreenComponentImplFactory: NoteDetailScreenComponentImpl.Factory,
+    private val bookListScreenComponentImplFactory: BookListScreenComponentImpl.Factory,
     @Assisted("onExitApp") private val onExitApp: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext
 ) : RootComponent, ComponentContext by componentContext {
@@ -58,6 +70,18 @@ class RootComponentImpl @AssistedInject constructor(
         navigation.push(RootComponent.Configuration.BookDetail(bookId))
     }
 
+    override fun onNoteClicked(noteId: String) {
+        navigation.push(RootComponent.Configuration.NoteDetail(noteId))
+    }
+
+    override fun onCollectionClick(collectionId: String){
+        navigation.push(RootComponent.Configuration.BookList(collectionId, null))
+    }
+
+    override fun onCollectionClick(bookStatus: BookStatus){
+        navigation.push(RootComponent.Configuration.BookList(null, bookStatus))
+    }
+
     // 5. ИСПРАВЛЕНИЕ: Фабрика создания экранов теперь принимает RootComponent.Configuration
     private fun child(
         config: RootComponent.Configuration,
@@ -70,31 +94,72 @@ class RootComponentImpl @AssistedInject constructor(
                     onBookClicked = { bookId ->
                         Log.d("APP_DEBUG", "6. ROOT_NAV: Успешно создаем Child.BookDetail для ID = ${bookId}")
                         onBookClicked(bookId) },
+                    onBookStatusClicked = { collectionId ->
+                        onCollectionClick(collectionId)
+                    },
+                    onCollectionClicked = { bookStatus ->
+                        onCollectionClick(bookStatus)
+                    },
                     componentContext = componentContext
                 )
-                RootComponent.Child.MainScreen(component)
+                MainScreen(component)
             }
             RootComponent.Configuration.Notes -> {
                 val component = noteScreenComponentImplFactory.create(
+                    onNoteClicked = { noteId ->
+                        onNoteClicked(noteId) },
                     componentContext = componentContext
                 )
-                RootComponent.Child.NoteScreen(component)
+                NoteScreen(component)
             }
             RootComponent.Configuration.Stats -> {
                 val component = statsScreenComponentImplFactory.create(
                     componentContext = componentContext
                 )
-                RootComponent.Child.StatsScreen(component)
+                StatsScreen(component)
             }
             RootComponent.Configuration.Profile -> {
                 val component = profileScreenComponentImplFactory.create(
                     componentContext = componentContext
                 )
-                RootComponent.Child.ProfileScreen(component)
+                ProfileScreen(component)
             }
             // Проверка через is, так как BookDetail — это data class с параметром bookId
             is RootComponent.Configuration.BookDetail -> {
-                RootComponent.Child.BookDetail(bookId = config.bookId)
+                val component = bookDetailScreenComponentImplFactory.create(
+                    bookId = config.bookId,
+                    onEditBookClicked = {},
+                    onUpdatePageClicked = {},
+                    onChangeStatusClicked = {},
+                    componentContext = componentContext
+                )
+                BookDetail(component)
+            }
+
+            is RootComponent.Configuration.NoteDetail -> {
+                val component = noteDetailScreenComponentImplFactory.create(
+                    noteId = config.noteId,
+                    onEditClicked = {},
+                    onDeleteClicked = {},
+                    componentContext = componentContext
+                )
+                NoteDetail(component)
+            }
+
+            is RootComponent.Configuration.BookList -> {
+
+                val component = bookListScreenComponentImplFactory.create(
+                    collectionId = config.collectionId,
+                    bookStatus = config.bookStatus,
+                    onBackClicked = {
+                        navigation.pop()
+                    },
+                    onBookClicked = { bookId ->
+                        onBookClicked(bookId)
+                    },
+                    componentContext = componentContext
+                )
+                BookList(component)
             }
         }
     }

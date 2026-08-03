@@ -4,6 +4,7 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
+import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.presentation.mainScreen.MainScreenStore.Intent
 import com.example.readtracker.android.presentation.mainScreen.MainScreenStore.Label
 import com.example.readtracker.android.presentation.mainScreen.MainScreenStore.State
@@ -12,12 +13,16 @@ import javax.inject.Inject
 interface MainScreenStore : Store<Intent, State, Label> {
     sealed interface Intent {
         data class ClickBook(val bookId: String) : Intent
+        data class ClickCollection(val collectionId: String) : Intent
+        data class ClickBookStatus(val bookStatus: BookStatus) : Intent
     }
 
     data object State
 
     sealed interface Label {
         data class ClickBook(val bookId: String) : Label
+        data class ClickCollection(val collectionId: String) : Label
+        data class ClickBookStatus(val bookStatus: BookStatus) : Label
     }
 }
 
@@ -39,10 +44,9 @@ class MainScreenStoreFactory @Inject constructor(
     private inner class ExecutorImpl : CoroutineExecutor<Intent, Nothing, State, Msg, Label>() {
         override fun executeIntent(intent: Intent) {
             when (intent) {
-                is Intent.ClickBook -> {
-                    // Теперь публикация Label отработает без рантайм конфликтов
-                    publish(Label.ClickBook(intent.bookId))
-                }
+                is Intent.ClickBook -> publish(Label.ClickBook(intent.bookId))
+                is Intent.ClickCollection -> publish(Label.ClickCollection(intent.collectionId))
+                is Intent.ClickBookStatus -> publish(Label.ClickBookStatus(intent.bookStatus))
             }
         }
     }

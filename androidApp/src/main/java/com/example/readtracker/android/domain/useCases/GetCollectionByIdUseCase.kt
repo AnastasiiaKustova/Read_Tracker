@@ -4,8 +4,8 @@ import com.example.readtracker.android.domain.entity.BookCollection
 import com.example.readtracker.android.domain.repository.BooksRepository
 import javax.inject.Inject
 
-class GetCollectionsUseCase @Inject constructor(
+class GetCollectionByIdUseCase @Inject constructor(
     private val repository: BooksRepository
 ) {
-    suspend operator fun invoke() : Set<BookCollection> = repository.getCollections()
+    suspend operator fun invoke(id: String) : BookCollection = repository.getCollection(id)
 }

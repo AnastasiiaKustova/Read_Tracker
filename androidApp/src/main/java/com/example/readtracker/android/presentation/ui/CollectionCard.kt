@@ -15,13 +15,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollectionCard(
     title: String,
     bookCount: Int,
+    onCollectionClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
+        onClick = onCollectionClick,
         modifier = modifier
             .width(160.dp)
             .height(100.dp),
@@ -91,6 +94,7 @@ fun CollectionCard(
 fun CollectionCardTest(){
     CollectionCard(
         "Тест",
-        5
+        5,
+        {}
     )
 }

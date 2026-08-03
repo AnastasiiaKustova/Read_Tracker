@@ -15,6 +15,7 @@ import com.example.readtracker.android.domain.entity.Tag
 fun NotesListScreen(
     noteSet: Set<Note>,
     tagSet: Set<Tag>,
+    onNoteClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -32,7 +33,8 @@ fun NotesListScreen(
                 }
 
                 // 2. Фильтр по поисковому запросу
-                val matchesSearch = note.text.contains(searchQuery, ignoreCase = true) ||
+                val matchesSearch = note.userComment.contains(searchQuery, ignoreCase = true) ||
+                        //note.quoteText?.contains(searchQuery, ignoreCase = true) ||
                         note.book.author.contains(searchQuery, ignoreCase = true) ||
                         note.book.title.contains(searchQuery, ignoreCase = true)
 
@@ -63,7 +65,9 @@ fun NotesListScreen(
             items = filteredNotes,
             key = { it.id } // Убедитесь, что у вашего класса Note есть поле id типа String или Int
         ) { note ->
-            NoteCard(note = note)
+            NoteCard(
+                note = note,
+                onCardClick = { onNoteClick(note.id) })
         }
     }
 }

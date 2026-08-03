@@ -10,8 +10,16 @@ class NotesRepositoryImpl@Inject constructor(): NotesRepository {
         TODO("Not yet implemented")
     }
 
+    override suspend fun getNote(id: String): Note {
+        return Note.test()
+    }
+
     override suspend fun addTag() {
         TODO("Not yet implemented")
+    }
+
+    override suspend fun getTag(id: String): Tag {
+        return Tag.test1()
     }
 
     override suspend fun getTags(): Set<Tag> {

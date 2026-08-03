@@ -1,29 +1,37 @@
-package com.example.readtracker.android.presentation.mainScreen
+package com.example.readtracker.android.presentation.bookListScreen
 
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
+import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.BookStatus
+import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import org.chromium.base.Log
 
-class MainScreenComponentImpl @AssistedInject constructor(
-    private val storeFactory: MainScreenStoreFactory,
-    @Assisted("onBookClicked") private val onBookClicked: (String) -> Unit,
-    @Assisted("onCollectionClicked") private val onCollectionClicked: (String) -> Unit,
-    @Assisted("onBookStatusClicked") private val onBookStatusClicked: (BookStatus) -> Unit,
+class BookListScreenComponentImpl @AssistedInject constructor(
+    private val storeFactory: BookListScreenStoreFactory,
+    @Assisted("collectionId") private val collectionId: String?,
+    @Assisted("bookStatus") private val bookStatus: BookStatus?,
+    @Assisted("onBackClicked") onBackClicked: () -> Unit,
+    @Assisted("onBookClicked") onBookClicked: (String) -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
-) : MainScreenComponent, ComponentContext by componentContext {
+) : BookListScreenComponent, ComponentContext by componentContext {
 
-    private val store = instanceKeeper.getStore { storeFactory.create() }
+    private val store = instanceKeeper.getStore { storeFactory.create(collectionId, bookStatus) }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val model: StateFlow<BookListScreenStore.State> = store.stateFlow
 
     init {
         // Безопасно подписываемся на события стора, когда экран физически стартует
@@ -35,9 +43,8 @@ class MainScreenComponentImpl @AssistedInject constructor(
                     launch {
                         store.labels.collect { label ->
                             when (label) {
-                                is MainScreenStore.Label.ClickBook -> onBookClicked(label.bookId)
-                                is MainScreenStore.Label.ClickCollection -> onCollectionClicked(label.collectionId)
-                                is MainScreenStore.Label.ClickBookStatus -> onBookStatusClicked(label.bookStatus)
+                                BookListScreenStore.Label.ClickBack -> onBackClicked()
+                                is BookListScreenStore.Label.ClickBook -> onBookClicked(label.bookId)
                             }
                         }
                     }
@@ -52,26 +59,25 @@ class MainScreenComponentImpl @AssistedInject constructor(
         })
     }
 
+
+
+    override fun onBackClick() {
+        store.accept(BookListScreenStore.Intent.ClickBack)
+    }
+
     override fun onBookClick(bookId: String) {
-        Log.d("APP_DEBUG", "2. COMPONENT: Метод onBookClicked($bookId) вызван. Отправляем Intent ClickBook в MVI стор.")
-        store.accept(MainScreenStore.Intent.ClickBook(bookId))
+        store.accept(BookListScreenStore.Intent.ClickBook(bookId))
     }
 
-    override fun onCollectionClick(collectionId: String){
-        store.accept(MainScreenStore.Intent.ClickCollection(collectionId))
-    }
-
-    override fun onCollectionClick(bookStatus: BookStatus){
-        store.accept(MainScreenStore.Intent.ClickBookStatus(bookStatus))
-    }
 
     @AssistedFactory
     interface Factory {
         fun create(
+            @Assisted("collectionId") collectionId: String?,
+            @Assisted("bookStatus") bookStatus: BookStatus?,
+            @Assisted("onBackClicked") onBackClicked: () -> Unit,
             @Assisted("onBookClicked") onBookClicked: (String) -> Unit,
-            @Assisted("onCollectionClicked") onCollectionClicked: (String) -> Unit,
-            @Assisted("onBookStatusClicked") onBookStatusClicked: (BookStatus) -> Unit,
             @Assisted("componentContext") componentContext: ComponentContext,
-        ): MainScreenComponentImpl
+        ): BookListScreenComponentImpl
     }
 }
