@@ -4,16 +4,17 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
+import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.readtracker.android.domain.entity.Book
-import com.example.readtracker.android.presentation.mainScreen.MainScreenComponentImpl
-import com.example.readtracker.android.presentation.mainScreen.MainScreenStore
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class BookDetailScreenComponentImpl @AssistedInject constructor(
@@ -22,10 +23,13 @@ class BookDetailScreenComponentImpl @AssistedInject constructor(
     @Assisted("onChangeStatusClicked") private val onChangeStatusClicked: () -> Unit,
     @Assisted("onUpdatePageClicked") private val onUpdatePageClicked: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
-    @Assisted("book") private val book: Book,
+    @Assisted("bookId") private val bookId: String,
 ) : BookDetailScreenComponent, ComponentContext by componentContext {
 
-    private val store = instanceKeeper.getStore { storeFactory.create() }
+    private val store = instanceKeeper.getStore { storeFactory.create(bookId) }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val model: StateFlow<BookDetailScreenStore.State> = store.stateFlow
 
     init {
         // Безопасно подписываемся на события стора, когда экран физически стартует
@@ -71,7 +75,7 @@ class BookDetailScreenComponentImpl @AssistedInject constructor(
     @AssistedFactory
     interface Factory {
         fun create(
-            @Assisted("book") book: Book,
+            @Assisted("bookId") bookId: String,
             @Assisted("onEditBookClicked") onEditBookClicked: () -> Unit,
             @Assisted("onChangeStatusClicked") onChangeStatusClicked: () -> Unit,
             @Assisted("onUpdatePageClicked") onUpdatePageClicked: () -> Unit,

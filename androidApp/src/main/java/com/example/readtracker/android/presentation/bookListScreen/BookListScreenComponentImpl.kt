@@ -4,24 +4,34 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
+import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.BookStatus
+import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class BookListScreenComponentImpl @AssistedInject constructor(
     private val storeFactory: BookListScreenStoreFactory,
+    @Assisted("collectionId") private val collectionId: String?,
+    @Assisted("bookStatus") private val bookStatus: BookStatus?,
     @Assisted("onBackClicked") onBackClicked: () -> Unit,
     @Assisted("onBookClicked") onBookClicked: (String) -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
 ) : BookListScreenComponent, ComponentContext by componentContext {
 
-    private val store = instanceKeeper.getStore { storeFactory.create() }
+    private val store = instanceKeeper.getStore { storeFactory.create(collectionId, bookStatus) }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val model: StateFlow<BookListScreenStore.State> = store.stateFlow
 
     init {
         // Безопасно подписываемся на события стора, когда экран физически стартует
@@ -63,6 +73,8 @@ class BookListScreenComponentImpl @AssistedInject constructor(
     @AssistedFactory
     interface Factory {
         fun create(
+            @Assisted("collectionId") collectionId: String?,
+            @Assisted("bookStatus") bookStatus: BookStatus?,
             @Assisted("onBackClicked") onBackClicked: () -> Unit,
             @Assisted("onBookClicked") onBookClicked: (String) -> Unit,
             @Assisted("componentContext") componentContext: ComponentContext,

@@ -1,8 +1,10 @@
 package com.example.readtracker.android.presentation.bookDetailScreen
 
-import com.example.readtracker.android.domain.entity.Book
+import kotlinx.coroutines.flow.StateFlow
 
 interface BookDetailScreenComponent {
+
+    val model: StateFlow<BookDetailScreenStore.State>
 
     fun onEditBookClick()
 

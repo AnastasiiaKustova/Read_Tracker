@@ -25,6 +25,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,17 +41,36 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.readtracker.android.core.formatWithSpace
 import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.presentation.common.CommonError
+import com.example.readtracker.android.presentation.common.CommonInitial
+import com.example.readtracker.android.presentation.common.CommonLoading
+import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailScreenStore
+import com.example.readtracker.android.presentation.ui.ChangeStatusDialog
 import com.example.readtracker.android.presentation.ui.StatItem
+import com.example.readtracker.android.presentation.ui.UpdatePageDialog
+import org.chromium.base.Log
 import kotlin.math.round
 
 @Composable
 fun BookDetailScreenContent(component: BookDetailScreenComponent) {
-    BookDetailScreen(
-        book = Book.test(), //component.book
-        onEditBookClick = { component.onEditBookClick() },
-        onUpdatePageClick = { component.onUpdatePageClick() },
-        onChangeStatusClick = { component.onChangeStatusClick() }
-    )
+
+    val state by component.model.collectAsState()
+
+    Box{
+        when(val screenState = state.screenState){
+            BookDetailScreenStore.State.ScreenState.Error -> CommonError()
+            BookDetailScreenStore.State.ScreenState.Initial -> CommonInitial()
+            is BookDetailScreenStore.State.ScreenState.Loaded -> {
+                BookDetailScreen(
+                    book = screenState.book,
+                    onEditBookClick = { component.onEditBookClick() },
+                    onUpdatePageClick = { component.onUpdatePageClick() },
+                    onChangeStatusClick = { component.onChangeStatusClick() }
+                )
+            }
+            BookDetailScreenStore.State.ScreenState.Loading -> CommonLoading()
+        }
+    }
 }
 
 @Composable
@@ -60,6 +84,41 @@ fun BookDetailScreen(
     val scrollState = rememberScrollState()
     val progress = if (book.totalPages > 0) book.currentPage.toFloat() / book.totalPages else 0f
     val percentage = round((progress * 100)).toInt()
+
+    var showUpdatePageDialog by remember { mutableStateOf(false) }
+    var showChangeStatusDialog by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        // --- ВЫЗОВ ДИАЛОГА СМЕНЫ СТАТУСА ---
+        if (showChangeStatusDialog) {
+            ChangeStatusDialog(
+                currentStatus = book.bookStatus, // Передаем текущий статус книги (например, BookStatus.READING)
+                onDismissRequest = { showChangeStatusDialog = false },
+                onStatusSelected = { newStatus ->
+                    showChangeStatusDialog = false
+                    onChangeStatusClick()
+                    // TODO: Отправить Интент во МВИ стор для сохранения нового статуса в базу данных
+                    android.util.Log.d("APP_DEBUG", "Выбран новый статус книги: $newStatus")
+                }
+            )
+        }
+
+        // --- ВЫЗОВ ДИАЛОГА ---
+        if (showUpdatePageDialog) {
+            UpdatePageDialog(
+                totalPages = book.totalPages,
+                currentPage = book.currentPage,
+                onDismissRequest = { showUpdatePageDialog = false }, // Закрываем при отмене
+                onConfirm = { newPage ->
+                    showUpdatePageDialog = false
+                    onUpdatePageClick()
+                    // TODO: Отправить Интент во МВИ стор для сохранения новой страницы в базу данных
+                    Log.d("APP_DEBUG", "Пользователь ввел корректную страницу: $newPage")
+                }
+            )
+        }
+    }
 
     // Внешний Box нужен, чтобы мы могли наложить кнопку редактирования в правый верхний угол
     Box(modifier = modifier.fillMaxSize().background(Color.White)) {
@@ -173,7 +232,7 @@ fun BookDetailScreen(
                         .height(46.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(Color(0xFFE5E5E5))
-                        .clickable { onChangeStatusClick() },
+                        .clickable { showChangeStatusDialog = true },
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
@@ -197,7 +256,7 @@ fun BookDetailScreen(
                         .height(46.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(Color(0xFFE5E5E5))
-                        .clickable { onUpdatePageClick() },
+                        .clickable { showUpdatePageDialog = true },
                     contentAlignment = Alignment.Center
                 ) {
                     Row(

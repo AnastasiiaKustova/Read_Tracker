@@ -1,8 +1,10 @@
 package com.example.readtracker.android.presentation.noteDetailScreen
 
-import com.example.readtracker.android.domain.entity.Note
+import kotlinx.coroutines.flow.StateFlow
 
 interface NoteDetailScreenComponent {
+
+    val model: StateFlow<NoteDetailScreenStore.State>
 
     fun onEditClick()
 

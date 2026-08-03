@@ -3,8 +3,10 @@ package com.example.readtracker.android.presentation.root
 import android.os.Parcelable
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
+import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.BottomTab
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenComponent
+import com.example.readtracker.android.presentation.bookListScreen.BookListScreenComponent
 import com.example.readtracker.android.presentation.mainScreen.MainScreenComponent
 import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailScreenComponent
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenComponent
@@ -22,6 +24,9 @@ interface RootComponent {
 
     fun onNoteClicked(bookId: String)
 
+    fun onCollectionClick(collectionId: String)
+
+    fun onCollectionClick(bookStatus: BookStatus)
 
     sealed class Configuration : Parcelable {
         @Parcelize
@@ -31,6 +36,7 @@ interface RootComponent {
         @Parcelize data object Profile : Configuration()
         @Parcelize data class BookDetail(val bookId: String) : Configuration()
         @Parcelize data class NoteDetail(val noteId: String) : Configuration()
+        @Parcelize data class BookList(val collectionId: String?, val bookStatus: BookStatus?) : Configuration()
     }
 
     sealed interface Child{
@@ -40,5 +46,6 @@ interface RootComponent {
         class ProfileScreen(val component: ProfileScreenComponent) : Child
         class BookDetail(val component: BookDetailScreenComponent) : Child
         class NoteDetail(val component: NoteDetailScreenComponent) : Child
+        class BookList(val component: BookListScreenComponent) : Child
     }
 }

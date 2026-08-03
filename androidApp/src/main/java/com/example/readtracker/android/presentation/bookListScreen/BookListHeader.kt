@@ -22,11 +22,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.readtracker.android.domain.entity.BookListMode
 
 @Composable
 fun BookListHeader(
     title: String,          // Название коллекции или статуса (например, "Отложенное")
     bookCount: Int,         // Количество книг (например, 284)
+    mode: BookListMode,
     currentSortName: String, // Текущий тип сортировки (например, "По дате добавления")
     onBackClick: () -> Unit,
     onSortClick: () -> Unit,
@@ -55,21 +57,43 @@ fun BookListHeader(
                 )
             }
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (mode == BookListMode.VIEW) {
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = title,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = bookCount.toString(),
+                        fontSize = 16.sp,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            else if (mode == BookListMode.SINGLE_SELECT){
                 Text(
-                    text = title,
+                    text = "Выберите книгу",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
                     textAlign = TextAlign.Center
                 )
+            }
+            else if (mode == BookListMode.MULTI_SELECT){
                 Text(
-                    text = bookCount.toString(),
-                    fontSize = 16.sp,
-                    color = Color.Gray,
+                    text = "Выберите книги",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
                     textAlign = TextAlign.Center
                 )
             }
+
         }
 
         Spacer(modifier = Modifier.height(16.dp))

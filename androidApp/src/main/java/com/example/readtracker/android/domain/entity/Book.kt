@@ -19,7 +19,7 @@ data class Book(
             currentPage = 120, // Поставил реальное число, чтобы прогресс-бар не улетал в космос
             totalPages = 400,
             quotesCount = 1,
-            bookStatus = BookStatus.READING
+            bookStatus = BookStatus.FINISHED
         )
     }
 }

@@ -21,9 +21,12 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,15 +42,31 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.readtracker.android.domain.entity.Note
+import com.example.readtracker.android.presentation.common.CommonError
+import com.example.readtracker.android.presentation.common.CommonInitial
+import com.example.readtracker.android.presentation.common.CommonLoading
 
 @Composable
 fun NoteDetailScreenContent(component: NoteDetailScreenComponent) {
-    NoteDetailScreen(
-        note = Note.test(),
-        onEditClicked = { component.onEditClick() },
-        onDeleteClicked = { component.onDeleteClick() }
-    )
+    val state by component.model.collectAsState()
+
+    Box{
+        when(val screenState = state.screenState){
+            NoteDetailScreenStore.State.ScreenState.Error -> CommonError()
+            NoteDetailScreenStore.State.ScreenState.Initial -> CommonInitial()
+            is NoteDetailScreenStore.State.ScreenState.Loaded -> {
+                NoteDetailScreen(
+                    note = screenState.note,
+                    onEditClicked = { component.onEditClick() },
+                    onDeleteClicked = { component.onDeleteClick() }
+                )
+            }
+            NoteDetailScreenStore.State.ScreenState.Loading -> CommonLoading()
+        }
+    }
 }
+
+
 
 @Composable
 fun NoteDetailScreen(

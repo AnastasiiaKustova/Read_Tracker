@@ -5,14 +5,18 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.popTo
 import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.value.Value
 import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.BottomTab
 import com.example.readtracker.android.domain.entity.Note
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenComponentImpl
+import com.example.readtracker.android.presentation.bookListScreen.BookListScreenComponentImpl
 import com.example.readtracker.android.presentation.mainScreen.MainScreenComponentImpl
+import com.example.readtracker.android.presentation.mainScreen.MainScreenStore
 import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailScreenComponentImpl
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenComponentImpl
 import com.example.readtracker.android.presentation.profileScreen.ProfileScreenComponentImpl
@@ -31,6 +35,7 @@ class RootComponentImpl @AssistedInject constructor(
     private val profileScreenComponentImplFactory: ProfileScreenComponentImpl.Factory,
     private val bookDetailScreenComponentImplFactory: BookDetailScreenComponentImpl.Factory,
     private val noteDetailScreenComponentImplFactory: NoteDetailScreenComponentImpl.Factory,
+    private val bookListScreenComponentImplFactory: BookListScreenComponentImpl.Factory,
     @Assisted("onExitApp") private val onExitApp: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext
 ) : RootComponent, ComponentContext by componentContext {
@@ -69,6 +74,14 @@ class RootComponentImpl @AssistedInject constructor(
         navigation.push(RootComponent.Configuration.NoteDetail(noteId))
     }
 
+    override fun onCollectionClick(collectionId: String){
+        navigation.push(RootComponent.Configuration.BookList(collectionId, null))
+    }
+
+    override fun onCollectionClick(bookStatus: BookStatus){
+        navigation.push(RootComponent.Configuration.BookList(null, bookStatus))
+    }
+
     // 5. ИСПРАВЛЕНИЕ: Фабрика создания экранов теперь принимает RootComponent.Configuration
     private fun child(
         config: RootComponent.Configuration,
@@ -81,6 +94,12 @@ class RootComponentImpl @AssistedInject constructor(
                     onBookClicked = { bookId ->
                         Log.d("APP_DEBUG", "6. ROOT_NAV: Успешно создаем Child.BookDetail для ID = ${bookId}")
                         onBookClicked(bookId) },
+                    onBookStatusClicked = { collectionId ->
+                        onCollectionClick(collectionId)
+                    },
+                    onCollectionClicked = { bookStatus ->
+                        onCollectionClick(bookStatus)
+                    },
                     componentContext = componentContext
                 )
                 MainScreen(component)
@@ -108,7 +127,7 @@ class RootComponentImpl @AssistedInject constructor(
             // Проверка через is, так как BookDetail — это data class с параметром bookId
             is RootComponent.Configuration.BookDetail -> {
                 val component = bookDetailScreenComponentImplFactory.create(
-                    book = Book.test(),
+                    bookId = config.bookId,
                     onEditBookClicked = {},
                     onUpdatePageClicked = {},
                     onChangeStatusClicked = {},
@@ -119,12 +138,28 @@ class RootComponentImpl @AssistedInject constructor(
 
             is RootComponent.Configuration.NoteDetail -> {
                 val component = noteDetailScreenComponentImplFactory.create(
-                    note = Note.test(),
+                    noteId = config.noteId,
                     onEditClicked = {},
                     onDeleteClicked = {},
                     componentContext = componentContext
                 )
                 NoteDetail(component)
+            }
+
+            is RootComponent.Configuration.BookList -> {
+
+                val component = bookListScreenComponentImplFactory.create(
+                    collectionId = config.collectionId,
+                    bookStatus = config.bookStatus,
+                    onBackClicked = {
+                        navigation.pop()
+                    },
+                    onBookClicked = { bookId ->
+                        onBookClicked(bookId)
+                    },
+                    componentContext = componentContext
+                )
+                BookList(component)
             }
         }
     }

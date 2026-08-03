@@ -16,9 +16,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.readtracker.android.domain.entity.BookCollection
+import com.example.readtracker.android.domain.entity.BookStatus
 
 @Composable
-fun CollectionsSection(collectionSet: Set<BookCollection>, modifier: Modifier = Modifier) {
+fun CollectionsSection(
+    collectionSet: Set<BookCollection>,
+    onCollectionClick: (String) -> Unit,
+    modifier: Modifier = Modifier) {
 
     Column(modifier = modifier.fillMaxWidth()) {
         // Шапка секции: Заголовок и кнопка «+»
@@ -56,7 +60,8 @@ fun CollectionsSection(collectionSet: Set<BookCollection>, modifier: Modifier = 
             items(collectionSet.toList()) { collection ->
                 CollectionCard(
                     title = collection.title,
-                    bookCount = collection.books.size
+                    bookCount = collection.books.size,
+                    onCollectionClick = {onCollectionClick(collection.id)}
                 )
             }
         }
@@ -73,5 +78,5 @@ fun CollectionsSectionTest(){
         BookCollection("3", "Прочитано", emptySet()),
         BookCollection("4", "Хочу купить", emptySet())
     )
-    CollectionsSection(dummyCollections)
+    CollectionsSection(dummyCollections, {})
 }

@@ -4,6 +4,7 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
+import com.example.readtracker.android.domain.entity.BookStatus
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -17,6 +18,8 @@ import org.chromium.base.Log
 class MainScreenComponentImpl @AssistedInject constructor(
     private val storeFactory: MainScreenStoreFactory,
     @Assisted("onBookClicked") private val onBookClicked: (String) -> Unit,
+    @Assisted("onCollectionClicked") private val onCollectionClicked: (String) -> Unit,
+    @Assisted("onBookStatusClicked") private val onBookStatusClicked: (BookStatus) -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
 ) : MainScreenComponent, ComponentContext by componentContext {
 
@@ -32,10 +35,9 @@ class MainScreenComponentImpl @AssistedInject constructor(
                     launch {
                         store.labels.collect { label ->
                             when (label) {
-                                is MainScreenStore.Label.ClickBook -> {
-                                    Log.d("APP_DEBUG", "3. COMPONENT: Перехвачен Label из MVI стора (bookId = ${label.bookId}). Вызываем навигацию.")
-                                    onBookClicked(label.bookId)
-                                }
+                                is MainScreenStore.Label.ClickBook -> onBookClicked(label.bookId)
+                                is MainScreenStore.Label.ClickCollection -> onCollectionClicked(label.collectionId)
+                                is MainScreenStore.Label.ClickBookStatus -> onBookStatusClicked(label.bookStatus)
                             }
                         }
                     }
@@ -55,10 +57,20 @@ class MainScreenComponentImpl @AssistedInject constructor(
         store.accept(MainScreenStore.Intent.ClickBook(bookId))
     }
 
+    override fun onCollectionClick(collectionId: String){
+        store.accept(MainScreenStore.Intent.ClickCollection(collectionId))
+    }
+
+    override fun onCollectionClick(bookStatus: BookStatus){
+        store.accept(MainScreenStore.Intent.ClickBookStatus(bookStatus))
+    }
+
     @AssistedFactory
     interface Factory {
         fun create(
             @Assisted("onBookClicked") onBookClicked: (String) -> Unit,
+            @Assisted("onCollectionClicked") onCollectionClicked: (String) -> Unit,
+            @Assisted("onBookStatusClicked") onBookStatusClicked: (BookStatus) -> Unit,
             @Assisted("componentContext") componentContext: ComponentContext,
         ): MainScreenComponentImpl
     }

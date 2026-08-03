@@ -7,7 +7,11 @@ interface NotesRepository {
 
     suspend fun addNote()
 
+    suspend fun getNote(id: String) : Note
+
     suspend fun addTag()
+
+    suspend fun getTag(id: String) : Tag
 
     suspend fun getTags(): Set<Tag>
 

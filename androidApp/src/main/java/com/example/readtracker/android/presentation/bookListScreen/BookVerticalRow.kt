@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.BookStatus
 import kotlin.math.round
@@ -31,6 +32,8 @@ import kotlin.math.round
 @Composable
 fun BookVerticalRow(
     book: Book,
+    isSelectionMode: Boolean, // Передаем, нужно ли показывать чекбокс
+    isSelected: Boolean,      // Состояние чекбокса
     onBookClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -41,23 +44,23 @@ fun BookVerticalRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFFE5E5E5)) // Фирменный серый фон карточки
+            .background(Color(0xFFE5E5E5))
             .clickable { onBookClick(book.id) }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Маленькая обложка книги слева
+        // Обложка книги
         Box(
             modifier = Modifier
                 .width(70.dp)
                 .height(100.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFB0B3B8)) // Заглушка под картинку
+                .background(Color(0xFFB0B3B8))
         )
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // Текстовая информация справа
+        // Текстовая информация (занимает всё оставшееся место)
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -82,7 +85,6 @@ fun BookVerticalRow(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-
             // Динамический блок прогресса в зависимости от статуса
             if (book.bookStatus == BookStatus.FINISHED) {
                 // Если прочитано — просто пишем статус без полосы прогресса
@@ -119,7 +121,7 @@ fun BookVerticalRow(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     LinearProgressIndicator(
-                        progress = progress ,
+                        progress = progress,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(5.dp)
@@ -129,6 +131,19 @@ fun BookVerticalRow(
                     )
                 }
             }
+        }
+
+        // 5. ДОБАВЛЯЕМ ЧЕКБОКС: Если включен режим мультивыбора, рисуем галочку справа
+        if (isSelectionMode) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onBookClick(book.id) }, // Клик по чекбоксу делает то же, что и клик по карточке
+                colors = CheckboxDefaults.colors(
+                    checkedColor = Color(0xFF007AFF), // Синяя галочка
+                    uncheckedColor = Color.Gray
+                )
+            )
         }
     }
 }

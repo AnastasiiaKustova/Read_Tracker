@@ -4,14 +4,17 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
+import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.readtracker.android.domain.entity.Note
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class NoteDetailScreenComponentImpl @AssistedInject constructor(
@@ -19,10 +22,13 @@ class NoteDetailScreenComponentImpl @AssistedInject constructor(
     @Assisted("onEditClicked") private val onEditClicked: () -> Unit,
     @Assisted("onDeleteClicked") private val onDeleteClicked: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
-    @Assisted("note") private val note: Note,
+    @Assisted("noteId") private val noteId: String,
 ) : NoteDetailScreenComponent, ComponentContext by componentContext {
 
-    private val store = instanceKeeper.getStore { storeFactory.create() }
+    private val store = instanceKeeper.getStore { storeFactory.create(noteId = noteId) }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val model: StateFlow<NoteDetailScreenStore.State> = store.stateFlow
 
     init {
         // Безопасно подписываемся на события стора, когда экран физически стартует
@@ -61,7 +67,7 @@ class NoteDetailScreenComponentImpl @AssistedInject constructor(
     @AssistedFactory
     interface Factory {
         fun create(
-            @Assisted("note") note: Note,
+            @Assisted("noteId") noteId: String,
             @Assisted("onEditClicked") onEditClicked: () -> Unit,
             @Assisted("onDeleteClicked") onDeleteClicked: () -> Unit,
             @Assisted("componentContext") componentContext: ComponentContext,
