@@ -1,5 +1,6 @@
 package com.example.readtracker.android.presentation.root
 
+import android.net.Uri
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
@@ -9,14 +10,12 @@ import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.popTo
 import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.value.Value
-import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.BottomTab
-import com.example.readtracker.android.domain.entity.Note
+import com.example.readtracker.android.presentation.addBookScreen.AddBookScreenComponentImpl
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenComponentImpl
 import com.example.readtracker.android.presentation.bookListScreen.BookListScreenComponentImpl
 import com.example.readtracker.android.presentation.mainScreen.MainScreenComponentImpl
-import com.example.readtracker.android.presentation.mainScreen.MainScreenStore
 import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailScreenComponentImpl
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenComponentImpl
 import com.example.readtracker.android.presentation.profileScreen.ProfileScreenComponentImpl
@@ -36,6 +35,7 @@ class RootComponentImpl @AssistedInject constructor(
     private val bookDetailScreenComponentImplFactory: BookDetailScreenComponentImpl.Factory,
     private val noteDetailScreenComponentImplFactory: NoteDetailScreenComponentImpl.Factory,
     private val bookListScreenComponentImplFactory: BookListScreenComponentImpl.Factory,
+    private val addBookScreenComponentImplFactory: AddBookScreenComponentImpl.Factory,
     @Assisted("onExitApp") private val onExitApp: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext
 ) : RootComponent, ComponentContext by componentContext {
@@ -70,6 +70,10 @@ class RootComponentImpl @AssistedInject constructor(
         navigation.push(RootComponent.Configuration.BookDetail(bookId))
     }
 
+    override fun onAddBookClicked() {
+        navigation.push(RootComponent.Configuration.AddBook)
+    }
+
     override fun onNoteClicked(noteId: String) {
         navigation.push(RootComponent.Configuration.NoteDetail(noteId))
     }
@@ -91,6 +95,8 @@ class RootComponentImpl @AssistedInject constructor(
         return when (config) {
             RootComponent.Configuration.MainScreen -> {
                 val component = mainScreenComponentImplFactory.create(
+                    onAddBookClicked = {
+                        onAddBookClicked() },
                     onBookClicked = { bookId ->
                         Log.d("APP_DEBUG", "6. ROOT_NAV: Успешно создаем Child.BookDetail для ID = ${bookId}")
                         onBookClicked(bookId) },
@@ -160,6 +166,16 @@ class RootComponentImpl @AssistedInject constructor(
                     componentContext = componentContext
                 )
                 BookList(component)
+            }
+
+            RootComponent.Configuration.AddBook -> {
+
+                val component = addBookScreenComponentImplFactory.create(
+                    onSearchLitresClicked = {},
+                    onSaveBookClicked = { navigation.pop()},
+                    componentContext = componentContext
+                )
+                AddBook(component)
             }
         }
     }

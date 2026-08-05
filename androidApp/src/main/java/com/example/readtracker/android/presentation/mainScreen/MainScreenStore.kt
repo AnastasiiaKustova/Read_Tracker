@@ -12,6 +12,7 @@ import javax.inject.Inject
 
 interface MainScreenStore : Store<Intent, State, Label> {
     sealed interface Intent {
+        data object ClickAddBook : Intent
         data class ClickBook(val bookId: String) : Intent
         data class ClickCollection(val collectionId: String) : Intent
         data class ClickBookStatus(val bookStatus: BookStatus) : Intent
@@ -20,6 +21,7 @@ interface MainScreenStore : Store<Intent, State, Label> {
     data object State
 
     sealed interface Label {
+        data object ClickAddBook : Label
         data class ClickBook(val bookId: String) : Label
         data class ClickCollection(val collectionId: String) : Label
         data class ClickBookStatus(val bookStatus: BookStatus) : Label
@@ -44,6 +46,7 @@ class MainScreenStoreFactory @Inject constructor(
     private inner class ExecutorImpl : CoroutineExecutor<Intent, Nothing, State, Msg, Label>() {
         override fun executeIntent(intent: Intent) {
             when (intent) {
+                Intent.ClickAddBook -> publish(Label.ClickAddBook)
                 is Intent.ClickBook -> publish(Label.ClickBook(intent.bookId))
                 is Intent.ClickCollection -> publish(Label.ClickCollection(intent.collectionId))
                 is Intent.ClickBookStatus -> publish(Label.ClickBookStatus(intent.bookStatus))
