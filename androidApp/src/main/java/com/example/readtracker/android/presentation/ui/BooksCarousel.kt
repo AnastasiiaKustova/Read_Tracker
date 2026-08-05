@@ -1,7 +1,5 @@
 package com.example.readtracker.android.presentation.ui
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,7 +15,6 @@ import com.example.readtracker.android.domain.entity.BookStatus
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BooksCarousel(bookSet: Set<Book>, onBookClick: (String) -> Unit, modifier: Modifier = Modifier) {
-
 
     val pagerState = rememberPagerState(pageCount = { bookSet.size })
 

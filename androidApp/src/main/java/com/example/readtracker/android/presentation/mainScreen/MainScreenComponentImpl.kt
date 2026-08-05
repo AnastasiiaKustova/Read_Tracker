@@ -18,6 +18,7 @@ import org.chromium.base.Log
 class MainScreenComponentImpl @AssistedInject constructor(
     private val storeFactory: MainScreenStoreFactory,
     @Assisted("onBookClicked") private val onBookClicked: (String) -> Unit,
+    @Assisted("onAddBookClicked") private val onAddBookClicked: () -> Unit,
     @Assisted("onCollectionClicked") private val onCollectionClicked: (String) -> Unit,
     @Assisted("onBookStatusClicked") private val onBookStatusClicked: (BookStatus) -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
@@ -36,6 +37,7 @@ class MainScreenComponentImpl @AssistedInject constructor(
                         store.labels.collect { label ->
                             when (label) {
                                 is MainScreenStore.Label.ClickBook -> onBookClicked(label.bookId)
+                                MainScreenStore.Label.ClickAddBook -> onAddBookClicked()
                                 is MainScreenStore.Label.ClickCollection -> onCollectionClicked(label.collectionId)
                                 is MainScreenStore.Label.ClickBookStatus -> onBookStatusClicked(label.bookStatus)
                             }
@@ -50,6 +52,10 @@ class MainScreenComponentImpl @AssistedInject constructor(
                 scope = null
             }
         })
+    }
+
+    override fun onAddBookClick() {
+        store.accept(MainScreenStore.Intent.ClickAddBook)
     }
 
     override fun onBookClick(bookId: String) {
@@ -68,6 +74,7 @@ class MainScreenComponentImpl @AssistedInject constructor(
     @AssistedFactory
     interface Factory {
         fun create(
+            @Assisted("onAddBookClicked") onAddBookClicked: () -> Unit,
             @Assisted("onBookClicked") onBookClicked: (String) -> Unit,
             @Assisted("onCollectionClicked") onCollectionClicked: (String) -> Unit,
             @Assisted("onBookStatusClicked") onBookStatusClicked: (BookStatus) -> Unit,
