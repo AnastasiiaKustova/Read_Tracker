@@ -21,6 +21,7 @@ import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.example.readtracker.android.domain.entity.BottomTab
 import com.example.readtracker.android.presentation.addBookScreen.AddBookScreenContent
+import com.example.readtracker.android.presentation.addCollectionScreen.AddCollectionScreenContent
 import com.example.readtracker.android.presentation.addNoteScreen.AddNoteScreenContent
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenContent
 import com.example.readtracker.android.presentation.bookListScreen.BookListScreenContent
@@ -48,6 +49,7 @@ fun RootContent(component: RootComponent) {
         is RootComponent.Child.StatsScreen -> BottomTab.STATS
         is RootComponent.Child.ProfileScreen -> BottomTab.PROFILE
         is RootComponent.Child.BookList -> BottomTab.MAIN
+        is RootComponent.Child.AddCollection -> BottomTab.MAIN
     }
 
     AppTheme {
@@ -109,6 +111,7 @@ fun RootContent(component: RootComponent) {
                         is RootComponent.Child.BookList -> BookListScreenContent(component = instance.component)
                         is RootComponent.Child.AddBook -> AddBookScreenContent(component = instance.component)
                         is RootComponent.Child.AddNote -> AddNoteScreenContent(component = instance.component)
+                        is RootComponent.Child.AddCollection -> AddCollectionScreenContent(component = instance.component)
                     }
                 }
             }

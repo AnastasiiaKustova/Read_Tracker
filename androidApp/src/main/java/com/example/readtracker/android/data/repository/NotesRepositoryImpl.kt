@@ -8,7 +8,7 @@ import javax.inject.Inject
 
 class NotesRepositoryImpl@Inject constructor(): NotesRepository {
     override suspend fun addNote(addNoteInput: AddNoteInput) {
-        TODO("Not yet implemented")
+
     }
 
     override suspend fun getNote(id: String): Note {
@@ -16,7 +16,7 @@ class NotesRepositoryImpl@Inject constructor(): NotesRepository {
     }
 
     override suspend fun addTag() {
-        TODO("Not yet implemented")
+
     }
 
     override suspend fun getTag(id: String): Tag {
@@ -28,6 +28,10 @@ class NotesRepositoryImpl@Inject constructor(): NotesRepository {
     }
 
     override suspend fun getNotes(): Set<Note> {
-        TODO("Not yet implemented")
+        return setOf(
+            Note.test(),
+            Note.testShort(),
+            Note.testWithoutTags(),
+        )
     }
 }

@@ -1,15 +1,13 @@
 package com.example.readtracker.android.data.repository
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import com.example.readtracker.android.domain.entity.AddBookInput
+import com.example.readtracker.android.domain.entity.AddCollectionInput
 import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.BookCollection
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.MainScreenItem
 import com.example.readtracker.android.domain.entity.MainScreenItem.Companion.default
 import com.example.readtracker.android.domain.repository.BooksRepository
-import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -37,10 +35,10 @@ class BooksRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getBooks(collectionId: String?, bookStatus: BookStatus?): Set<Book> {
-        return BookCollection.test().books
+        return setOf(Book.test(),Book.test1())
     }
 
-    override suspend fun addCollection() {
+    override suspend fun addCollection(addCollectionInput: AddCollectionInput) {
         TODO("Not yet implemented")
     }
 
@@ -49,7 +47,7 @@ class BooksRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getCollections(): Set<BookCollection> {
-        TODO("Not yet implemented")
+        return setOf(BookCollection.test())
     }
 
     init {

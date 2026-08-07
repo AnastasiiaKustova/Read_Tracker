@@ -9,10 +9,11 @@ import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.popTo
 import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.value.Value
+import com.example.readtracker.android.domain.entity.BookListMode
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.BottomTab
-import com.example.readtracker.android.domain.entity.Tag
 import com.example.readtracker.android.presentation.addBookScreen.AddBookScreenComponentImpl
+import com.example.readtracker.android.presentation.addCollectionScreen.AddCollectionScreenComponentImpl
 import com.example.readtracker.android.presentation.addNoteScreen.AddNoteScreenComponentImpl
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenComponentImpl
 import com.example.readtracker.android.presentation.bookListScreen.BookListScreenComponentImpl
@@ -21,6 +22,7 @@ import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailS
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenComponentImpl
 import com.example.readtracker.android.presentation.profileScreen.ProfileScreenComponentImpl
 import com.example.readtracker.android.presentation.root.RootComponent.Child.AddBook
+import com.example.readtracker.android.presentation.root.RootComponent.Child.AddCollection
 import com.example.readtracker.android.presentation.root.RootComponent.Child.AddNote
 import com.example.readtracker.android.presentation.root.RootComponent.Child.BookDetail
 import com.example.readtracker.android.presentation.root.RootComponent.Child.BookList
@@ -46,6 +48,7 @@ class RootComponentImpl @AssistedInject constructor(
     private val bookListScreenComponentImplFactory: BookListScreenComponentImpl.Factory,
     private val addBookScreenComponentImplFactory: AddBookScreenComponentImpl.Factory,
     private val addNoteScreenComponentImplFactory: AddNoteScreenComponentImpl.Factory,
+    private val addCollectionScreenComponentImplFactory: AddCollectionScreenComponentImpl.Factory,
     @Assisted("onExitApp") private val onExitApp: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext
 ) : RootComponent, ComponentContext by componentContext {
@@ -88,16 +91,29 @@ class RootComponentImpl @AssistedInject constructor(
         navigation.push(RootComponent.Configuration.AddNote)
     }
 
+    override fun onAddCollectionClicked() {
+        navigation.push(RootComponent.Configuration.AddCollection)
+    }
+
     override fun onNoteClicked(noteId: String) {
         navigation.push(RootComponent.Configuration.NoteDetail(noteId))
     }
 
-    override fun onCollectionClick(collectionId: String){
-        navigation.push(RootComponent.Configuration.BookList(collectionId, null))
+    override fun onCollectionClick(collectionId: String, openMode: BookListMode){
+        navigation.push(RootComponent.Configuration.BookList(collectionId, null, openMode))
     }
 
-    override fun onCollectionClick(bookStatus: BookStatus){
-        navigation.push(RootComponent.Configuration.BookList(null, bookStatus))
+    override fun onCollectionClick(bookStatus: BookStatus, openMode: BookListMode){
+        navigation.push(RootComponent.Configuration.BookList(null, bookStatus, openMode))
+    }
+
+    override fun onCollectionClick(openMode: BookListMode, onResult: ((Set<String>) -> Unit)? ){
+        navigation.push(RootComponent.Configuration.BookList(
+            null,
+            null,
+            openMode,
+            onResult = onResult
+        ))
     }
 
     // 5. ИСПРАВЛЕНИЕ: Фабрика создания экранов теперь принимает RootComponent.Configuration
@@ -115,11 +131,13 @@ class RootComponentImpl @AssistedInject constructor(
                         Log.d("APP_DEBUG", "6. ROOT_NAV: Успешно создаем Child.BookDetail для ID = ${bookId}")
                         onBookClicked(bookId) },
                     onBookStatusClicked = { collectionId ->
-                        onCollectionClick(collectionId)
+                        onCollectionClick(collectionId, BookListMode.VIEW)
                     },
                     onCollectionClicked = { bookStatus ->
-                        onCollectionClick(bookStatus)
+                        onCollectionClick(bookStatus, BookListMode.VIEW)
                     },
+                    onAddCollectionClicked = {
+                        onAddCollectionClicked() },
                     componentContext = componentContext
                 )
                 MainScreen(component)
@@ -173,11 +191,16 @@ class RootComponentImpl @AssistedInject constructor(
                 val component = bookListScreenComponentImplFactory.create(
                     collectionId = config.collectionId,
                     bookStatus = config.bookStatus,
+                    openMode = config.openMode,
                     onBackClicked = {
                         navigation.pop()
                     },
                     onBookClicked = { bookId ->
                         onBookClicked(bookId)
+                    },
+                    onMultiSelectConfirmed = { selectedIds ->
+                        config.onResult?.invoke(selectedIds)
+                        navigation.pop()
                     },
                     componentContext = componentContext
                 )
@@ -201,6 +224,27 @@ class RootComponentImpl @AssistedInject constructor(
                     componentContext = componentContext
                 )
                 AddNote(component)
+            }
+
+            RootComponent.Configuration.AddCollection -> {
+                var component: AddCollection? = null
+                val createdComponent = addCollectionScreenComponentImplFactory.create(
+                    onSaveClicked = { navigation.pop()},
+                    onAddBooksClicked = { onCollectionClick(
+                        BookListMode.MULTI_SELECT,
+                        onResult = { selectedIds ->
+                            // 3. Магия: через сохраненную ссылку на компонент мы дотягиваемся
+                            // до его внутреннего метода или стора, который теперь доступен!
+                            // (Код метода onBooksSelected написан на Шаге 3)
+                            (component?.component as? AddCollectionScreenComponentImpl)
+                                ?.onBooksSelected(selectedIds)
+                        }
+                    ) },
+                    componentContext = componentContext
+                )
+                AddCollection(createdComponent).also {
+                    component = it
+                }
             }
         }
     }

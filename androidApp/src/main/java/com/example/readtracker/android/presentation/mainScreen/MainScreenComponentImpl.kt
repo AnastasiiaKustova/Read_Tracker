@@ -4,14 +4,17 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
+import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.readtracker.android.domain.entity.BookStatus
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.chromium.base.Log
 
@@ -19,12 +22,16 @@ class MainScreenComponentImpl @AssistedInject constructor(
     private val storeFactory: MainScreenStoreFactory,
     @Assisted("onBookClicked") private val onBookClicked: (String) -> Unit,
     @Assisted("onAddBookClicked") private val onAddBookClicked: () -> Unit,
+    @Assisted("onAddCollectionClicked") private val onAddCollectionClicked: () -> Unit,
     @Assisted("onCollectionClicked") private val onCollectionClicked: (String) -> Unit,
     @Assisted("onBookStatusClicked") private val onBookStatusClicked: (BookStatus) -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
 ) : MainScreenComponent, ComponentContext by componentContext {
 
     private val store = instanceKeeper.getStore { storeFactory.create() }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val model: StateFlow<MainScreenStore.State> = store.stateFlow
 
     init {
         // Безопасно подписываемся на события стора, когда экран физически стартует
@@ -38,6 +45,7 @@ class MainScreenComponentImpl @AssistedInject constructor(
                             when (label) {
                                 is MainScreenStore.Label.ClickBook -> onBookClicked(label.bookId)
                                 MainScreenStore.Label.ClickAddBook -> onAddBookClicked()
+                                MainScreenStore.Label.ClickAddCollection -> onAddCollectionClicked()
                                 is MainScreenStore.Label.ClickCollection -> onCollectionClicked(label.collectionId)
                                 is MainScreenStore.Label.ClickBookStatus -> onBookStatusClicked(label.bookStatus)
                             }
@@ -58,6 +66,10 @@ class MainScreenComponentImpl @AssistedInject constructor(
         store.accept(MainScreenStore.Intent.ClickAddBook)
     }
 
+    override fun onAddCollectionClick() {
+        store.accept(MainScreenStore.Intent.ClickAddCollection)
+    }
+
     override fun onBookClick(bookId: String) {
         Log.d("APP_DEBUG", "2. COMPONENT: Метод onBookClicked($bookId) вызван. Отправляем Intent ClickBook в MVI стор.")
         store.accept(MainScreenStore.Intent.ClickBook(bookId))
@@ -75,6 +87,7 @@ class MainScreenComponentImpl @AssistedInject constructor(
     interface Factory {
         fun create(
             @Assisted("onAddBookClicked") onAddBookClicked: () -> Unit,
+            @Assisted("onAddCollectionClicked") onAddCollectionClicked: () -> Unit,
             @Assisted("onBookClicked") onBookClicked: (String) -> Unit,
             @Assisted("onCollectionClicked") onCollectionClicked: (String) -> Unit,
             @Assisted("onBookStatusClicked") onBookStatusClicked: (BookStatus) -> Unit,

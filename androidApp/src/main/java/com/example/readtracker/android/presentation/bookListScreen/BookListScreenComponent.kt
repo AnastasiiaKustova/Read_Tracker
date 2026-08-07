@@ -8,4 +8,6 @@ interface BookListScreenComponent {
     fun onBackClick()
 
     fun onBookClick(bookId: String)
+
+    fun onMultiSelectConfirm(ids: Set<String>)
 }
