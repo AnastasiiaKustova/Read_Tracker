@@ -2,13 +2,14 @@ package com.example.readtracker.android.domain.entity
 
 data class Note (
     val id: String,
-    val quoteText: String?,    // Сама цитата из книги
-    val pageNumber: Int?,     // Номер страницы (опционально)
-    val userComment: String,
-    val book: Book, //bookId: String,
-    val tags: Set<Tag>,
-    val createdAt: String
-){
+    override val quoteText: String?,
+    override val pageNumber: Int?,
+    override val userComment: String,
+    override val book: Book,
+    override val tags: Set<Tag>,
+    override val isPublic: Boolean,
+    val createdAt: String,
+) : NoteFields {
     companion object{
         fun test() = Note(
             id = "0",
@@ -17,6 +18,7 @@ data class Note (
             userComment = "Тут какая-то супер пупер интересное мнение читателя. Его мысли и еще что-то интересное, в несколько строчек. Тут какая-то супер пупер интересное мнение читателя. Его мысли и еще что-то интересное, в несколько строчек. Тут какая-то супер пупер интересное мнение читателя. Его мысли и еще что-то интересное, в несколько строчек.",
             book = Book.test(),
             tags = setOf(Tag.test1(), Tag.test2()),
+            isPublic = true,
             createdAt = "24.05.2026"
         )
         fun testShort() = Note(
@@ -26,6 +28,7 @@ data class Note (
             userComment = "Это комментарий",
             book = Book.test(),
             tags = setOf(Tag.test2()),
+            isPublic = true,
             createdAt = "24.05.2026"
         )
         fun testWithoutTags() = Note(
@@ -35,6 +38,7 @@ data class Note (
             userComment = "Это комментарий",
             book = Book.test(),
             tags = emptySet(),
+            isPublic = false,
             createdAt = "24.05.2026"
         )
     }

@@ -1,11 +1,12 @@
 package com.example.readtracker.android.domain.repository
 
+import com.example.readtracker.android.domain.entity.AddNoteInput
 import com.example.readtracker.android.domain.entity.Note
 import com.example.readtracker.android.domain.entity.Tag
 
 interface NotesRepository {
 
-    suspend fun addNote()
+    suspend fun addNote(addNoteInput: AddNoteInput)
 
     suspend fun getNote(id: String) : Note
 

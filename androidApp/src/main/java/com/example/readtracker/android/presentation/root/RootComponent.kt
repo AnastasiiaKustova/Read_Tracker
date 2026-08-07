@@ -5,7 +5,9 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.BottomTab
+import com.example.readtracker.android.domain.entity.Tag
 import com.example.readtracker.android.presentation.addBookScreen.AddBookScreenComponent
+import com.example.readtracker.android.presentation.addNoteScreen.AddNoteScreenComponent
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenComponent
 import com.example.readtracker.android.presentation.bookListScreen.BookListScreenComponent
 import com.example.readtracker.android.presentation.mainScreen.MainScreenComponent
@@ -22,6 +24,8 @@ interface RootComponent {
     fun onTabSelected(tab: BottomTab)
 
     fun onAddBookClicked()
+
+    fun onAddNoteClicked()
 
     fun onBookClicked(bookId: String)
 
@@ -41,6 +45,8 @@ interface RootComponent {
         @Parcelize data class NoteDetail(val noteId: String) : Configuration()
         @Parcelize data class BookList(val collectionId: String?, val bookStatus: BookStatus?) : Configuration()
         @Parcelize data object AddBook : Configuration()
+        @Parcelize data object AddNote : Configuration()
+
     }
 
     sealed interface Child{
@@ -52,5 +58,6 @@ interface RootComponent {
         class NoteDetail(val component: NoteDetailScreenComponent) : Child
         class BookList(val component: BookListScreenComponent) : Child
         class AddBook(val component: AddBookScreenComponent) : Child
+        class AddNote(val component: AddNoteScreenComponent) : Child
     }
 }

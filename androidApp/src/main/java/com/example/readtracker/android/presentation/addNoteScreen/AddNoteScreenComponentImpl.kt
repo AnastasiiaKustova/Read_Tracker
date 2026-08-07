@@ -1,26 +1,33 @@
-package com.example.readtracker.android.presentation.noteScreen
+package com.example.readtracker.android.presentation.addNoteScreen
 
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
+import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.example.readtracker.android.domain.entity.AddNoteInput
+import com.example.readtracker.android.domain.entity.Tag
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class NoteScreenComponentImpl @AssistedInject constructor(
-    private val storeFactory: NoteScreenStoreFactory,
-    @Assisted("onNoteClicked") private val onNoteClicked: (String) -> Unit,
-    @Assisted("onAddNoteClicked") private val onAddNoteClicked: () -> Unit,
+class AddNoteScreenComponentImpl @AssistedInject constructor(
+    private val storeFactory: AddNoteScreenStoreFactory,
+    @Assisted("onSaveClicked") private val onSaveClicked: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
-) : NoteScreenComponent, ComponentContext by componentContext {
+) : AddNoteScreenComponent, ComponentContext by componentContext {
 
     private val store = instanceKeeper.getStore { storeFactory.create() }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val model: StateFlow<AddNoteScreenStore.State> = store.stateFlow
 
     init {
         // Безопасно подписываемся на события стора, когда экран физически стартует
@@ -32,8 +39,7 @@ class NoteScreenComponentImpl @AssistedInject constructor(
                     launch {
                         store.labels.collect { label ->
                             when (label) {
-                                is NoteScreenStore.Label.ClickNote -> onNoteClicked(label.noteId)
-                                NoteScreenStore.Label.ClickAddNote -> onAddNoteClicked()
+                                is AddNoteScreenStore.Label.ClickSave -> onSaveClicked()
                             }
                         }
                     }
@@ -48,21 +54,16 @@ class NoteScreenComponentImpl @AssistedInject constructor(
         })
     }
 
-    override fun onNoteClick(noteId: String) {
-        store.accept(NoteScreenStore.Intent.ClickNote(noteId))
-    }
-
-    override fun onAddNoteClick() {
-        store.accept(NoteScreenStore.Intent.ClickAddNote)
+    override fun onSaveClick(addNoteInput: AddNoteInput) {
+        store.accept(AddNoteScreenStore.Intent.ClickSave(addNoteInput))
     }
 
 
     @AssistedFactory
     interface Factory{
         fun create(
-            @Assisted("onNoteClicked") onNoteClicked: (String) -> Unit,
-            @Assisted("onAddNoteClicked") onAddNoteClicked: () -> Unit,
+            @Assisted("onSaveClicked") onSaveClicked: () -> Unit,
             @Assisted("componentContext") componentContext: ComponentContext,
-        ): NoteScreenComponentImpl
+        ): AddNoteScreenComponentImpl
     }
 }
