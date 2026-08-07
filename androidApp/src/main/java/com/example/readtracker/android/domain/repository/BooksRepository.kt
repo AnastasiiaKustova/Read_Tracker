@@ -1,6 +1,7 @@
 package com.example.readtracker.android.domain.repository
 
 import com.example.readtracker.android.domain.entity.AddBookInput
+import com.example.readtracker.android.domain.entity.AddCollectionInput
 import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.BookCollection
 import com.example.readtracker.android.domain.entity.BookStatus
@@ -16,7 +17,7 @@ interface BooksRepository {
 
     suspend fun getBooks(collectionId: String?, bookStatus: BookStatus?): Set<Book>
 
-    suspend fun addCollection()
+    suspend fun addCollection(addCollectionInput: AddCollectionInput)
 
     suspend fun getCollection(id: String): BookCollection
 

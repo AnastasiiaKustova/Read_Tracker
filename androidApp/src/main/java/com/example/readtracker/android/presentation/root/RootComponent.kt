@@ -3,10 +3,11 @@ package com.example.readtracker.android.presentation.root
 import android.os.Parcelable
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
+import com.example.readtracker.android.domain.entity.BookListMode
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.BottomTab
-import com.example.readtracker.android.domain.entity.Tag
 import com.example.readtracker.android.presentation.addBookScreen.AddBookScreenComponent
+import com.example.readtracker.android.presentation.addCollectionScreen.AddCollectionScreenComponent
 import com.example.readtracker.android.presentation.addNoteScreen.AddNoteScreenComponent
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenComponent
 import com.example.readtracker.android.presentation.bookListScreen.BookListScreenComponent
@@ -27,13 +28,17 @@ interface RootComponent {
 
     fun onAddNoteClicked()
 
+    fun onAddCollectionClicked()
+
     fun onBookClicked(bookId: String)
 
     fun onNoteClicked(bookId: String)
 
-    fun onCollectionClick(collectionId: String)
+    fun onCollectionClick(collectionId: String, openMode: BookListMode)
 
-    fun onCollectionClick(bookStatus: BookStatus)
+    fun onCollectionClick(bookStatus: BookStatus, openMode: BookListMode)
+
+    fun onCollectionClick(openMode: BookListMode, onResult: ((Set<String>) -> Unit)? = null)
 
     sealed class Configuration : Parcelable {
         @Parcelize
@@ -43,9 +48,15 @@ interface RootComponent {
         @Parcelize data object Profile : Configuration()
         @Parcelize data class BookDetail(val bookId: String) : Configuration()
         @Parcelize data class NoteDetail(val noteId: String) : Configuration()
-        @Parcelize data class BookList(val collectionId: String?, val bookStatus: BookStatus?) : Configuration()
+        @Parcelize data class BookList(
+            val collectionId: String?,
+            val bookStatus: BookStatus?,
+            val openMode: BookListMode,
+            @Transient val onResult: ((Set<String>) -> Unit)? = null
+        ) : Configuration()
         @Parcelize data object AddBook : Configuration()
         @Parcelize data object AddNote : Configuration()
+        @Parcelize data object AddCollection : Configuration()
 
     }
 
@@ -59,5 +70,6 @@ interface RootComponent {
         class BookList(val component: BookListScreenComponent) : Child
         class AddBook(val component: AddBookScreenComponent) : Child
         class AddNote(val component: AddNoteScreenComponent) : Child
+        class AddCollection(val component: AddCollectionScreenComponent) : Child
     }
 }

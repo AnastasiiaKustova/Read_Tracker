@@ -6,6 +6,7 @@ import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.BookListMode
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore
 import dagger.assisted.Assisted
@@ -23,12 +24,14 @@ class BookListScreenComponentImpl @AssistedInject constructor(
     private val storeFactory: BookListScreenStoreFactory,
     @Assisted("collectionId") private val collectionId: String?,
     @Assisted("bookStatus") private val bookStatus: BookStatus?,
+    @Assisted("openMode") openMode: BookListMode,
     @Assisted("onBackClicked") onBackClicked: () -> Unit,
     @Assisted("onBookClicked") onBookClicked: (String) -> Unit,
+    @Assisted("onMultiSelectConfirmed") onMultiSelectConfirmed: (Set<String>) -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
 ) : BookListScreenComponent, ComponentContext by componentContext {
 
-    private val store = instanceKeeper.getStore { storeFactory.create(collectionId, bookStatus) }
+    private val store = instanceKeeper.getStore { storeFactory.create(collectionId, bookStatus, openMode) }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val model: StateFlow<BookListScreenStore.State> = store.stateFlow
@@ -45,6 +48,7 @@ class BookListScreenComponentImpl @AssistedInject constructor(
                             when (label) {
                                 BookListScreenStore.Label.ClickBack -> onBackClicked()
                                 is BookListScreenStore.Label.ClickBook -> onBookClicked(label.bookId)
+                                is BookListScreenStore.Label.ClickMultiSelectConfirm -> onMultiSelectConfirmed(label.bookIds)
                             }
                         }
                     }
@@ -59,8 +63,6 @@ class BookListScreenComponentImpl @AssistedInject constructor(
         })
     }
 
-
-
     override fun onBackClick() {
         store.accept(BookListScreenStore.Intent.ClickBack)
     }
@@ -69,14 +71,19 @@ class BookListScreenComponentImpl @AssistedInject constructor(
         store.accept(BookListScreenStore.Intent.ClickBook(bookId))
     }
 
+    override fun onMultiSelectConfirm(ids: Set<String>){
+        store.accept(BookListScreenStore.Intent.ClickMultiSelectConfirm(ids))
+    }
 
     @AssistedFactory
     interface Factory {
         fun create(
             @Assisted("collectionId") collectionId: String?,
             @Assisted("bookStatus") bookStatus: BookStatus?,
+            @Assisted("openMode") openMode: BookListMode,
             @Assisted("onBackClicked") onBackClicked: () -> Unit,
             @Assisted("onBookClicked") onBookClicked: (String) -> Unit,
+            @Assisted("onMultiSelectConfirmed") onMultiSelectConfirmed: (Set<String>) -> Unit,
             @Assisted("componentContext") componentContext: ComponentContext,
         ): BookListScreenComponentImpl
     }

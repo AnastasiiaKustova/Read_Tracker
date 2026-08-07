@@ -2,6 +2,7 @@ package com.example.readtracker.android.presentation.mainScreen
 
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,41 +14,61 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.BookCollection
 import com.example.readtracker.android.domain.entity.BookStatus
+import com.example.readtracker.android.presentation.common.CommonError
+import com.example.readtracker.android.presentation.common.CommonInitial
+import com.example.readtracker.android.presentation.common.CommonLoading
 import com.example.readtracker.android.presentation.ui.BooksCarousel
 import com.example.readtracker.android.presentation.ui.CollectionsSection
 import com.example.readtracker.android.presentation.ui.ReadingStatusSection
 
 @Composable
 fun MainScreenContent(component: MainScreenComponent) {
-    MainScreen(
-        onAddBookClicked = {
-            component.onAddBookClick()
-        },
-        onBookClicked = {bookId ->
-            Log.d("APP_DEBUG", "1. UI: Кликнули на книгу с ID = $bookId. Передаем в компонент.")
-            component.onBookClick(bookId) },
-        onCollectionClicked = {collectionId ->
-            component.onCollectionClick(collectionId) },
-        onBookStatusClicked = {bookStatus ->
-            component.onCollectionClick(bookStatus) },
-    )
+    val state by component.model.collectAsState()
+
+    Box{
+        when(val screenState = state.screenState){
+            MainScreenStore.State.ScreenState.Error -> CommonError()
+            MainScreenStore.State.ScreenState.Initial -> CommonInitial()
+            is MainScreenStore.State.ScreenState.Loaded -> {
+                MainScreen(
+                    bookSet = screenState.books,
+                    collectionSet = screenState.collections,
+                    onAddBookClicked = {
+                        component.onAddBookClick()
+                    },
+                    onAddCollectionClicked = {
+                        component.onAddCollectionClick()
+                    },
+                    onBookClicked = {bookId ->
+                        Log.d("APP_DEBUG", "1. UI: Кликнули на книгу с ID = $bookId. Передаем в компонент.")
+                        component.onBookClick(bookId) },
+                    onCollectionClicked = {collectionId ->
+                        component.onCollectionClick(collectionId) },
+                    onBookStatusClicked = {bookStatus ->
+                        component.onCollectionClick(bookStatus) },
+                )
+            }
+            MainScreenStore.State.ScreenState.Loading -> CommonLoading()
+        }
+    }
 }
 
 @Composable
 private fun MainScreen(
+    bookSet: Set<Book>,
+    collectionSet: Set<BookCollection>,
     onAddBookClicked: () -> Unit,
+    onAddCollectionClicked: () -> Unit,
     onBookClicked: (String) -> Unit,
     onCollectionClicked: (String) -> Unit,
     onBookStatusClicked: (BookStatus) -> Unit,
@@ -58,8 +79,6 @@ private fun MainScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
-        //Spacer(modifier = Modifier.height(20.dp))
 
         Row(
             modifier = Modifier
@@ -80,14 +99,8 @@ private fun MainScreen(
             }
         }
 
-        val dummyBooks = setOf(
-            Book("0","Название в две строчки или может в три и вс...", "Автор Такойто", "",null,12345, 15456, 0, BookStatus.READING),
-            Book("1","Мастер и Маргарита", "Михаил Булгаков", "",null,200, 450, 0, BookStatus.READING),
-            Book("2","Преступление и наказание", "Федор Достоевский", "",null,50, 600, 0, BookStatus.READING)
-        )
-
         BooksCarousel(
-            dummyBooks,
+            bookSet,
             onBookClick = { bookId ->
                 onBookClicked(bookId)
             }
@@ -95,18 +108,13 @@ private fun MainScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        val dummyCollections = setOf(
-            // Тестовые данные под ваш макет
-            BookCollection("1", "Любимые", dummyBooks),
-            BookCollection("2", "Какая-то ко...", emptySet()),
-            BookCollection("3", "Прочитано", emptySet()),
-            BookCollection("4", "Хочу купить", emptySet())
-        )
         CollectionsSection(
-            collectionSet = dummyCollections,
+            collectionSet = collectionSet,
             onCollectionClick = { collectionId ->
                 onCollectionClicked(collectionId)
-            })
+            },
+            onAddCollectionClick = { onAddCollectionClicked() }
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -115,12 +123,5 @@ private fun MainScreen(
                 onBookStatusClicked(bookStatus)
             },
         )
-
     }
-}
-
-@Preview
-@Composable
-private fun MainScreenTest(){
-    MainScreen({},{},{},{})
 }

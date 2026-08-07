@@ -49,8 +49,8 @@ fun BookListScreenContent(component: BookListScreenComponent) {
                     books = screenState.books.toList(),
                     onBackClick = { component.onBackClick() },
                     onBookClick = { bookId -> component.onBookClick(bookId) },
-                    onMultiSelectConfirm = {},
-                    mode = BookListMode.MULTI_SELECT
+                    onMultiSelectConfirm = { ids -> component.onMultiSelectConfirm(ids)},
+                    mode = screenState.mode
                 )
             }
             BookListScreenStore.State.ScreenState.Loading -> CommonLoading()

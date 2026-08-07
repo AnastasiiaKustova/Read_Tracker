@@ -1,39 +1,33 @@
 package com.example.readtracker.android.presentation.noteScreen
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
-import com.example.readtracker.android.domain.entity.Note
-import com.example.readtracker.android.domain.entity.Tag
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.example.readtracker.android.presentation.common.CommonError
+import com.example.readtracker.android.presentation.common.CommonInitial
+import com.example.readtracker.android.presentation.common.CommonLoading
+import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailScreenStore
 import com.example.readtracker.android.presentation.ui.NotesListScreen
 
 @Composable
 fun NoteScreenContent(component: NoteScreenComponent) {
-    NoteScreen(
-        onAddNoteClicked = {component.onAddNoteClick()},
-        onNoteClicked = {noteId ->
-            component.onNoteClick(noteId) },
-    )
-}
+    val state by component.model.collectAsState()
 
-@Composable
-private fun NoteScreen(
-    onAddNoteClicked: () -> Unit,
-    onNoteClicked: (String) -> Unit,
-){
-    // Тестовый список заметок под ваш макет
-    val dummyNotes = setOf(
-        Note.test(),
-        Note.testShort(),
-        Note.testShort(),
-        Note.testWithoutTags()
-    )
-
-    val dummyTags = setOf(Tag.test1(), Tag.test2())
-    NotesListScreen(
-        noteSet = dummyNotes,
-        tagSet = dummyTags,
-        onAddNoteClick = onAddNoteClicked,
-        onNoteClick = { noteId ->
-            onNoteClicked(noteId)
+    Box{
+        when(val screenState = state.screenState){
+            NoteScreenStore.State.ScreenState.Error -> CommonError()
+            NoteScreenStore.State.ScreenState.Initial -> CommonInitial()
+            is NoteScreenStore.State.ScreenState.Loaded -> {
+                NotesListScreen(
+                    noteSet = screenState.notes,
+                    tagSet = screenState.tags,
+                    onAddNoteClick = {component.onAddNoteClick()},
+                    onNoteClick = {noteId ->
+                        component.onNoteClick(noteId) },
+                )
+            }
+            NoteScreenStore.State.ScreenState.Loading -> CommonLoading()
         }
-    )
+    }
 }
