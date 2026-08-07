@@ -1,6 +1,5 @@
 package com.example.readtracker.android.presentation.root
 
-import android.net.Uri
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
@@ -12,14 +11,24 @@ import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.value.Value
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.BottomTab
+import com.example.readtracker.android.domain.entity.Tag
 import com.example.readtracker.android.presentation.addBookScreen.AddBookScreenComponentImpl
+import com.example.readtracker.android.presentation.addNoteScreen.AddNoteScreenComponentImpl
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenComponentImpl
 import com.example.readtracker.android.presentation.bookListScreen.BookListScreenComponentImpl
 import com.example.readtracker.android.presentation.mainScreen.MainScreenComponentImpl
 import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailScreenComponentImpl
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenComponentImpl
 import com.example.readtracker.android.presentation.profileScreen.ProfileScreenComponentImpl
-import com.example.readtracker.android.presentation.root.RootComponent.Child.*
+import com.example.readtracker.android.presentation.root.RootComponent.Child.AddBook
+import com.example.readtracker.android.presentation.root.RootComponent.Child.AddNote
+import com.example.readtracker.android.presentation.root.RootComponent.Child.BookDetail
+import com.example.readtracker.android.presentation.root.RootComponent.Child.BookList
+import com.example.readtracker.android.presentation.root.RootComponent.Child.MainScreen
+import com.example.readtracker.android.presentation.root.RootComponent.Child.NoteDetail
+import com.example.readtracker.android.presentation.root.RootComponent.Child.NoteScreen
+import com.example.readtracker.android.presentation.root.RootComponent.Child.ProfileScreen
+import com.example.readtracker.android.presentation.root.RootComponent.Child.StatsScreen
 import com.example.readtracker.android.presentation.statsScreen.StatsScreenComponentImpl
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -36,6 +45,7 @@ class RootComponentImpl @AssistedInject constructor(
     private val noteDetailScreenComponentImplFactory: NoteDetailScreenComponentImpl.Factory,
     private val bookListScreenComponentImplFactory: BookListScreenComponentImpl.Factory,
     private val addBookScreenComponentImplFactory: AddBookScreenComponentImpl.Factory,
+    private val addNoteScreenComponentImplFactory: AddNoteScreenComponentImpl.Factory,
     @Assisted("onExitApp") private val onExitApp: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext
 ) : RootComponent, ComponentContext by componentContext {
@@ -72,6 +82,10 @@ class RootComponentImpl @AssistedInject constructor(
 
     override fun onAddBookClicked() {
         navigation.push(RootComponent.Configuration.AddBook)
+    }
+
+    override fun onAddNoteClicked() {
+        navigation.push(RootComponent.Configuration.AddNote)
     }
 
     override fun onNoteClicked(noteId: String) {
@@ -112,6 +126,8 @@ class RootComponentImpl @AssistedInject constructor(
             }
             RootComponent.Configuration.Notes -> {
                 val component = noteScreenComponentImplFactory.create(
+                    onAddNoteClicked = {
+                        onAddNoteClicked() },
                     onNoteClicked = { noteId ->
                         onNoteClicked(noteId) },
                     componentContext = componentContext
@@ -176,6 +192,15 @@ class RootComponentImpl @AssistedInject constructor(
                     componentContext = componentContext
                 )
                 AddBook(component)
+            }
+
+            is RootComponent.Configuration.AddNote -> {
+
+                val component = addNoteScreenComponentImplFactory.create(
+                    onSaveClicked = { navigation.pop()},
+                    componentContext = componentContext
+                )
+                AddNote(component)
             }
         }
     }

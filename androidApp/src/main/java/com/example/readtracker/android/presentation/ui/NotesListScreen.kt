@@ -15,6 +15,7 @@ import com.example.readtracker.android.domain.entity.Tag
 fun NotesListScreen(
     noteSet: Set<Note>,
     tagSet: Set<Tag>,
+    onAddNoteClick: () -> Unit,
     onNoteClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -56,7 +57,7 @@ fun NotesListScreen(
                 tagSet = tagSet,
                 selectedTagId = selectedTagId,
                 onTagSelect = { selectedTagId = it },
-                onAddNoteClick = { /* Открыть создание заметки */ }
+                onAddNoteClick = { onAddNoteClick() }
             )
         }
 

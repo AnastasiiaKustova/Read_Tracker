@@ -1,8 +1,8 @@
 package com.example.readtracker.android.presentation.addBookScreen
 
-import android.net.Uri
+import com.example.readtracker.android.domain.entity.AddBookInput
 
 interface AddBookScreenComponent {
     fun onSearchLitresClick()
-    fun onSaveBookClick(title: String, author: String, pages: Int, desc: String, coverUri: Uri?)
+    fun onSaveBookClick(addBookInput: AddBookInput)
 }

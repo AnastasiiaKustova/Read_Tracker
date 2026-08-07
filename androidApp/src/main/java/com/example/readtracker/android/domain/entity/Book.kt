@@ -2,14 +2,15 @@ package com.example.readtracker.android.domain.entity
 
 data class Book(
     val id: String,
-    val title: String,
-    val author: String,
-    val description: String,
+    override val title: String,
+    override val author: String,
+    override val description: String,
+    override val coverUri: android.net.Uri?,
+    override val totalPages: Int,
     val currentPage: Int,
-    val totalPages: Int,
     val quotesCount: Int,
-    val bookStatus: BookStatus
-){
+    val bookStatus: BookStatus,
+) : BookFields {
     companion object{
         fun test() = Book(
             id = "01",
@@ -19,7 +20,8 @@ data class Book(
             currentPage = 120, // Поставил реальное число, чтобы прогресс-бар не улетал в космос
             totalPages = 400,
             quotesCount = 1,
-            bookStatus = BookStatus.FINISHED
+            bookStatus = BookStatus.FINISHED,
+            coverUri = null
         )
     }
 }

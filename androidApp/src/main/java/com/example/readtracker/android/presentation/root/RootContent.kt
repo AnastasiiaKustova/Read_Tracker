@@ -21,6 +21,7 @@ import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.example.readtracker.android.domain.entity.BottomTab
 import com.example.readtracker.android.presentation.addBookScreen.AddBookScreenContent
+import com.example.readtracker.android.presentation.addNoteScreen.AddNoteScreenContent
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenContent
 import com.example.readtracker.android.presentation.bookListScreen.BookListScreenContent
 import com.example.readtracker.android.presentation.mainScreen.MainScreenContent
@@ -41,6 +42,7 @@ fun RootContent(component: RootComponent) {
         is RootComponent.Child.MainScreen -> BottomTab.MAIN
         is RootComponent.Child.BookDetail -> BottomTab.MAIN
         is RootComponent.Child.AddBook -> BottomTab.MAIN
+        is RootComponent.Child.AddNote -> BottomTab.NOTES
         is RootComponent.Child.NoteScreen -> BottomTab.NOTES
         is RootComponent.Child.NoteDetail -> BottomTab.NOTES
         is RootComponent.Child.StatsScreen -> BottomTab.STATS
@@ -106,6 +108,7 @@ fun RootContent(component: RootComponent) {
                         is RootComponent.Child.NoteDetail -> NoteDetailScreenContent(component = instance.component)
                         is RootComponent.Child.BookList -> BookListScreenContent(component = instance.component)
                         is RootComponent.Child.AddBook -> AddBookScreenContent(component = instance.component)
+                        is RootComponent.Child.AddNote -> AddNoteScreenContent(component = instance.component)
                     }
                 }
             }

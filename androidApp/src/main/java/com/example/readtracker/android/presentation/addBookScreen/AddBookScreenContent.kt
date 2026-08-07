@@ -45,21 +45,22 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.example.readtracker.android.domain.entity.AddBookInput
 import com.example.readtracker.android.presentation.common.CustomInputField
 
 @Composable
 fun AddBookScreenContent(component: AddBookScreenComponent) {
     AddBookScreen(
         onSearchLitresClick = { component.onSearchLitresClick() },
-        onSaveBookClick = { title: String, author: String, pages: Int, desc: String, coverUri: Uri? ->
-            component.onSaveBookClick(title, author, pages, desc, coverUri) },
+        onSaveBookClick = { addBookInput: AddBookInput ->
+            component.onSaveBookClick(addBookInput) },
     )
 }
 
 @Composable
 fun AddBookScreen(
     onSearchLitresClick: () -> Unit,       // Переход на экран поиска ЛитРес
-    onSaveBookClick: (title: String, author: String, pages: Int, desc: String, coverUri: Uri?) -> Unit,
+    onSaveBookClick: (addBookInput: AddBookInput) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -212,7 +213,14 @@ fun AddBookScreen(
         Button(
             onClick = {
                 val pagesCount = pagesText.toIntOrNull() ?: 0
-                onSaveBookClick(titleText, authorText, pagesCount, descriptionText, selectedImageUri)
+                onSaveBookClick(
+                    AddBookInput(
+                        title = titleText,
+                        author = authorText,
+                        totalPages = pagesCount,
+                        description = descriptionText,
+                        coverUri = selectedImageUri)
+                )
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -226,13 +234,4 @@ fun AddBookScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
     }
-}
-
-@Preview
-@Composable
-fun AddBookScreenTest(){
-    AddBookScreen(
-        onSearchLitresClick = {},
-        onSaveBookClick = { string: String, string1: String, i: Int, string2: String, uri: Uri? -> }
-    )
 }

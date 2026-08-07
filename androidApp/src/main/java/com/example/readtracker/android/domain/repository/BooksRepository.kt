@@ -1,5 +1,6 @@
 package com.example.readtracker.android.domain.repository
 
+import com.example.readtracker.android.domain.entity.AddBookInput
 import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.BookCollection
 import com.example.readtracker.android.domain.entity.BookStatus
@@ -9,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 interface BooksRepository {
     val mainScreenFlow: Flow<MainScreenItem>
 
-    suspend fun addBook()
+    suspend fun addBook(addBookInput: AddBookInput)
 
     suspend fun getBook(id: String): Book
 

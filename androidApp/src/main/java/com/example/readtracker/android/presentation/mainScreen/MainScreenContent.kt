@@ -81,9 +81,9 @@ private fun MainScreen(
         }
 
         val dummyBooks = setOf(
-            Book("0","Название в две строчки или может в три и вс...", "Автор Такойто", "",12345, 15456, 0, BookStatus.READING),
-            Book("1","Мастер и Маргарита", "Михаил Булгаков", "",200, 450, 0, BookStatus.READING),
-            Book("2","Преступление и наказание", "Федор Достоевский", "",50, 600, 0, BookStatus.READING)
+            Book("0","Название в две строчки или может в три и вс...", "Автор Такойто", "",null,12345, 15456, 0, BookStatus.READING),
+            Book("1","Мастер и Маргарита", "Михаил Булгаков", "",null,200, 450, 0, BookStatus.READING),
+            Book("2","Преступление и наказание", "Федор Достоевский", "",null,50, 600, 0, BookStatus.READING)
         )
 
         BooksCarousel(

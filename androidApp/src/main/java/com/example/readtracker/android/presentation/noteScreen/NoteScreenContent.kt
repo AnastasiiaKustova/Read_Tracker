@@ -8,6 +8,7 @@ import com.example.readtracker.android.presentation.ui.NotesListScreen
 @Composable
 fun NoteScreenContent(component: NoteScreenComponent) {
     NoteScreen(
+        onAddNoteClicked = {component.onAddNoteClick()},
         onNoteClicked = {noteId ->
             component.onNoteClick(noteId) },
     )
@@ -15,6 +16,7 @@ fun NoteScreenContent(component: NoteScreenComponent) {
 
 @Composable
 private fun NoteScreen(
+    onAddNoteClicked: () -> Unit,
     onNoteClicked: (String) -> Unit,
 ){
     // Тестовый список заметок под ваш макет
@@ -29,6 +31,7 @@ private fun NoteScreen(
     NotesListScreen(
         noteSet = dummyNotes,
         tagSet = dummyTags,
+        onAddNoteClick = onAddNoteClicked,
         onNoteClick = { noteId ->
             onNoteClicked(noteId)
         }

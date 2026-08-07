@@ -2,6 +2,7 @@ package com.example.readtracker.android.data.repository
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.example.readtracker.android.domain.entity.AddBookInput
 import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.BookCollection
 import com.example.readtracker.android.domain.entity.BookStatus
@@ -27,7 +28,7 @@ class BooksRepositoryImpl @Inject constructor(
     private val _booksState = MutableStateFlow(default())
     override val mainScreenFlow: Flow<MainScreenItem> = _booksState.asStateFlow()
 
-    override suspend fun addBook() {
+    override suspend fun addBook(addBookInput: AddBookInput) {
         TODO("Not yet implemented")
     }
 
