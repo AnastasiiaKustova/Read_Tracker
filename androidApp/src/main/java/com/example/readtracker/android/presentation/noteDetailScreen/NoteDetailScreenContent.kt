@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.Note
 import com.example.readtracker.android.presentation.common.CommonError
 import com.example.readtracker.android.presentation.common.CommonInitial
@@ -281,15 +282,4 @@ fun NoteDetailScreen(
             }
         }
     }
-}
-
-
-@Composable
-@Preview
-fun NoteDetailScreenTest(){
-    NoteDetailScreen(
-        note = Note.test(),
-        onEditClicked = {},
-        onDeleteClicked = {},
-    )
 }

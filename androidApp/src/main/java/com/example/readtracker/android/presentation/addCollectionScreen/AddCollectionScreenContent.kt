@@ -229,8 +229,7 @@ fun AddCollectionScreen(
 
         Button(
             onClick = {
-                val bookIds = selectedBooks.map { it.id }.toSet()
-                onCreateCollectionClick(AddCollectionInput(collectionTitle, bookIds))
+                onCreateCollectionClick(AddCollectionInput(collectionTitle, selectedBooks))
             },
             modifier = Modifier
                 .fillMaxWidth()
