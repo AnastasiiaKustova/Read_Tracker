@@ -58,5 +58,8 @@ dependencies {
     implementation(libs.mvikotlin.coroutines)
     implementation(libs.dagger)
     implementation(libs.coil.compose)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
     ksp(libs.dagger.compiler)
 }

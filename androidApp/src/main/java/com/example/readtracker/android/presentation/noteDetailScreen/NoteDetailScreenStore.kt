@@ -5,7 +5,9 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
+import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.Note
+import com.example.readtracker.android.domain.useCases.GetBookByIdUseCase
 import com.example.readtracker.android.domain.useCases.GetNoteByIdUseCase
 import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailScreenStore.Intent
 import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailScreenStore.Label
@@ -31,7 +33,7 @@ interface NoteDetailScreenStore : Store<Intent, State, Label> {
             data object Error : ScreenState
 
             data class Loaded(
-                val note: Note
+                val note: Note,
             ) : ScreenState
         }
     }
@@ -44,7 +46,8 @@ interface NoteDetailScreenStore : Store<Intent, State, Label> {
 
 class NoteDetailScreenStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
-    private val getNoteByIdUseCase: GetNoteByIdUseCase
+    private val getNoteByIdUseCase: GetNoteByIdUseCase,
+    private val getBookByIdUseCase: GetBookByIdUseCase
 ) {
     fun create(noteId: String): NoteDetailScreenStore =
         object : NoteDetailScreenStore, Store<Intent, State, Label> by storeFactory.create(

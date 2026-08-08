@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.example.readtracker.android.domain.entity.Note
 import androidx.compose.runtime.key
 import androidx.compose.ui.text.font.FontStyle
+import com.example.readtracker.android.domain.entity.Book
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

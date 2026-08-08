@@ -66,7 +66,7 @@ fun CollectionsSection(
             items(collectionSet.toList()) { collection ->
                 CollectionCard(
                     title = collection.title,
-                    bookCount = collection.bookIds.size,
+                    bookCount = collection.books.size,
                     onCollectionClick = {onCollectionClick(collection.id)}
                 )
             }

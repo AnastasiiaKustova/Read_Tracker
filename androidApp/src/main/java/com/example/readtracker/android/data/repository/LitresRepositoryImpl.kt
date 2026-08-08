@@ -34,27 +34,27 @@ class LitresRepositoryImpl @Inject constructor() : LitresRepository {
     override suspend fun getPopularBooks(): List<BookDao> {
 
         return listOf(
-            BookDao(
-                id = "1",
-                title = "Мастер и Маргарита",
-                author = "Михаил Булгаков",
-                coverUrl = "https://example.com",
-                description = "Культовый роман Михаила Булгакова..."
-            ),
-            BookDao(
-                id = "2",
-                title = "Преступление и наказание",
-                author = "Федор Достоевский",
-                coverUrl = "https://example.com",
-                description = "Глубокий философский роман..."
-            ),
-            BookDao(
-                id = "3",
-                title = "Понедельник начинается в субботу",
-                author = "Аркадий и Борис Стругацкие",
-                coverUrl = "https://example.com",
-                description = "Фантастическая юмористическая повесть..."
-            )
+//            BookDao(
+//                id = "1",
+//                title = "Мастер и Маргарита",
+//                author = "Михаил Булгаков",
+//                coverUrl = "https://example.com",
+//                description = "Культовый роман Михаила Булгакова..."
+//            ),
+//            BookDao(
+//                id = "2",
+//                title = "Преступление и наказание",
+//                author = "Федор Достоевский",
+//                coverUrl = "https://example.com",
+//                description = "Глубокий философский роман..."
+//            ),
+//            BookDao(
+//                id = "3",
+//                title = "Понедельник начинается в субботу",
+//                author = "Аркадий и Борис Стругацкие",
+//                coverUrl = "https://example.com",
+//                description = "Фантастическая юмористическая повесть..."
+//            )
         )
     }
 }
