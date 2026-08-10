@@ -1,5 +1,7 @@
 package com.example.readtracker.android.presentation.bookDetailScreen
 
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,13 +36,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import com.example.readtracker.android.core.formatWithSpace
 import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.presentation.common.CommonError
 import com.example.readtracker.android.presentation.common.CommonInitial
 import com.example.readtracker.android.presentation.common.CommonLoading
@@ -64,8 +71,8 @@ fun BookDetailScreenContent(component: BookDetailScreenComponent) {
                 BookDetailScreen(
                     book = screenState.book,
                     onEditBookClick = { component.onEditBookClick() },
-                    onUpdatePageClick = { component.onUpdatePageClick() },
-                    onChangeStatusClick = { component.onChangeStatusClick() }
+                    onUpdatePageClick = { newPage -> component.onUpdatePageClick(newPage) },
+                    onChangeStatusClick = { newStatus -> component.onChangeStatusClick(newStatus) }
                 )
             }
             BookDetailScreenStore.State.ScreenState.Loading -> CommonLoading()
@@ -77,8 +84,8 @@ fun BookDetailScreenContent(component: BookDetailScreenComponent) {
 fun BookDetailScreen(
     book: Book,
     onEditBookClick: () -> Unit,       // Лямбда для карандашика редактирования
-    onChangeStatusClick: () -> Unit,   // Лямбда для кнопки смены статуса
-    onUpdatePageClick: () -> Unit,     // Лямбда для кнопки ввода страницы
+    onChangeStatusClick: (BookStatus) -> Unit,   // Лямбда для кнопки смены статуса
+    onUpdatePageClick: (Int) -> Unit,     // Лямбда для кнопки ввода страницы
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -97,7 +104,7 @@ fun BookDetailScreen(
                 onDismissRequest = { showChangeStatusDialog = false },
                 onStatusSelected = { newStatus ->
                     showChangeStatusDialog = false
-                    onChangeStatusClick()
+                    onChangeStatusClick(newStatus)
                     // TODO: Отправить Интент во МВИ стор для сохранения нового статуса в базу данных
                     android.util.Log.d("APP_DEBUG", "Выбран новый статус книги: $newStatus")
                 }
@@ -112,7 +119,7 @@ fun BookDetailScreen(
                 onDismissRequest = { showUpdatePageDialog = false }, // Закрываем при отмене
                 onConfirm = { newPage ->
                     showUpdatePageDialog = false
-                    onUpdatePageClick()
+                    onUpdatePageClick(newPage)
                     // TODO: Отправить Интент во МВИ стор для сохранения новой страницы в базу данных
                     Log.d("APP_DEBUG", "Пользователь ввел корректную страницу: $newPage")
                 }
@@ -139,8 +146,22 @@ fun BookDetailScreen(
                     .width(160.dp)
                     .height(240.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xFFB0B3B8))
-            )
+                    .background(Color(0xFFB0B3B8)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (book.coverUri != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(book.coverUri)
+                            .memoryCacheKey(book.id) // Жестко привязываем кэш в оперативной памяти к ID книги!
+                            .diskCacheKey(book.id)   // Жестко привязываем кэш на диске к ID книги!
+                            .build(),
+                        contentDescription = "Обложка книги",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 

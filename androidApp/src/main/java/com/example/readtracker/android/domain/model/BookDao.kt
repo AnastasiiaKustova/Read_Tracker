@@ -15,7 +15,7 @@ interface BookDao {
     fun getAllBooksFlow(): Flow<List<BookEntity>>
 
     @Query("SELECT * FROM books")
-    fun getAllBooks(): List<BookEntity>
+    suspend fun getAllBooks(): List<BookEntity>
 
     // Поиск конкретной книги по ID
     @Query("SELECT * FROM books WHERE id = :bookId")

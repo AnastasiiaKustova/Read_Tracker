@@ -1,5 +1,7 @@
 package com.example.readtracker.android.data.repository
 
+import android.net.Uri
+import com.example.readtracker.android.data.local.CoverStorage
 import com.example.readtracker.android.data.mapper.toDomain
 import com.example.readtracker.android.data.mapper.toDomainSet
 import com.example.readtracker.android.data.mapper.toEntity
@@ -23,12 +25,15 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class BooksRepositoryImpl @Inject constructor(
     private val bookDao: BookDao,
     private val collectionDao: CollectionDao,
+    private val coverStorage: CoverStorage
 ) : BooksRepository {
 
     private val repositoryJob = SupervisorJob()
@@ -39,9 +44,15 @@ class BooksRepositoryImpl @Inject constructor(
 
     override suspend fun addBook(addBookInput: AddBookInput) {
         val generatedId = java.util.UUID.randomUUID().toString()
-        val finalBook = addBookInput.toBook(generatedId)
+        val internalCoverUri = coverStorage.saveCoverToInternalStorage(addBookInput.coverUri, generatedId)
+        val finalBook = addBookInput.toBook(generatedId).copy(coverUri = internalCoverUri)
         bookDao.insertBook(finalBook.toEntity())
     }
+
+    override suspend fun updateBook(updatedBook: Book){
+        bookDao.insertBook(updatedBook.toEntity())
+    }
+
 
     override suspend fun getBook(id: String): Book {
         val entity = bookDao.getBookById(id) ?: throw Exception("Книга не найдена")
@@ -86,7 +97,19 @@ class BooksRepositoryImpl @Inject constructor(
 
     init {
         repositoryScope.launch {
-
+            combine(
+                bookDao.getAllBooksFlow().onStart { emit(emptyList()) },
+                collectionDao.getAllCollectionsFlow().onStart { emit(emptyList()) }
+            ) { bookEntities, collectionEntities ->
+                // Перегоняем List из Room в ваши доменные Set через наши мапперы коллекций
+                MainScreenItem(
+                    books = bookEntities.toDomainSet(),
+                    collections = collectionEntities.toDomainSet()
+                )
+            }.collect { updatedMainScreenItem ->
+                // Как только в Room что-то меняется, репозиторий обновляет ваш _booksState!
+                _booksState.value = updatedMainScreenItem
+            }
         }
     }
 }
