@@ -8,7 +8,7 @@ import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.useCases.GetBookByIdUseCase
-import com.example.readtracker.android.domain.useCases.UpdateBookStatusUseCase
+import com.example.readtracker.android.domain.useCases.UpdateBookUseCase
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.Intent
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.Label
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.State
@@ -51,7 +51,7 @@ interface BookDetailScreenStore : Store<Intent, State, Label> {
 class BookDetailScreenStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
     private val getBookByIdUseCase: GetBookByIdUseCase,
-    private val updateBookStatusUseCase: UpdateBookStatusUseCase
+    private val updateBookUseCase: UpdateBookUseCase
 ) {
     fun create(bookId: String): BookDetailScreenStore =
         object : BookDetailScreenStore, Store<Intent, State, Label> by storeFactory.create(
@@ -117,12 +117,21 @@ class BookDetailScreenStoreFactory @Inject constructor(
 
                         if (currentScreenState is State.ScreenState.Loaded) {
                             try {
-
                                 val currentBook = currentScreenState.book
-                                val updatedBook = currentBook.copy(bookStatus = intent.newStatus)
+
+                                val newPage = if (intent.newStatus == BookStatus.FINISHED ) {
+                                    currentBook.totalPages
+                                } else {
+                                    currentBook.currentPage
+                                }
+
+                                val updatedBook = currentBook.copy(
+                                    bookStatus = intent.newStatus,
+                                    currentPage = newPage
+                                )
 
                                 withContext(Dispatchers.IO) {
-                                    updateBookStatusUseCase(updatedBook)
+                                    updateBookUseCase(updatedBook)
                                 }
 
                                 dispatch(Msg.ScreenLoaded(book = updatedBook))
@@ -133,6 +142,7 @@ class BookDetailScreenStoreFactory @Inject constructor(
                         }
                     }
                 }
+
                 is Intent.ClickUpdatePage -> {
                     scope.launch {
                         val currentScreenState = state().screenState
@@ -141,10 +151,21 @@ class BookDetailScreenStoreFactory @Inject constructor(
                             try {
 
                                 val currentBook = currentScreenState.book
-                                val updatedBook = currentBook.copy(currentPage = intent.newPage)
+
+                                val newStatus =
+                                    if (currentBook.totalPages == intent.newPage) {
+                                        BookStatus.FINISHED
+                                    } else {
+                                        currentBook.bookStatus
+                                    }
+
+                                val updatedBook = currentBook.copy(
+                                    currentPage = intent.newPage,
+                                    bookStatus = newStatus
+                                )
 
                                 withContext(Dispatchers.IO) {
-                                    updateBookStatusUseCase(updatedBook)
+                                    updateBookUseCase(updatedBook)
                                 }
 
                                 dispatch(Msg.ScreenLoaded(book = updatedBook))
@@ -157,14 +178,20 @@ class BookDetailScreenStoreFactory @Inject constructor(
                 }
             }
         }
+
         override fun executeAction(action: Action) {
             when (action) {
                 is Action.ScreenLoaded -> dispatch(
-                    Msg.ScreenLoaded(action.book))
+                    Msg.ScreenLoaded(action.book)
+                )
+
                 Action.ScreenError -> dispatch(
-                    Msg.ScreenError)
+                    Msg.ScreenError
+                )
+
                 Action.ScreenLoading -> dispatch(
-                    Msg.ScreenLoading)
+                    Msg.ScreenLoading
+                )
             }
         }
     }
