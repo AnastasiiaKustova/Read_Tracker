@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
@@ -47,6 +48,8 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import com.example.readtracker.android.core.formatWithSpace
 import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.BookDetailMode
+import com.example.readtracker.android.domain.entity.BookItem
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.presentation.common.CommonError
 import com.example.readtracker.android.presentation.common.CommonInitial
@@ -63,18 +66,42 @@ fun BookDetailScreenContent(component: BookDetailScreenComponent) {
 
     val state by component.model.collectAsState()
 
-    Box{
-        when(val screenState = state.screenState){
+    Box {
+        when (val screenState = state.screenState) {
             BookDetailScreenStore.State.ScreenState.Error -> CommonError()
             BookDetailScreenStore.State.ScreenState.Initial -> CommonInitial()
             is BookDetailScreenStore.State.ScreenState.Loaded -> {
-                BookDetailScreen(
-                    book = screenState.book,
-                    onEditBookClick = { component.onEditBookClick() },
-                    onUpdatePageClick = { newPage -> component.onUpdatePageClick(newPage) },
-                    onChangeStatusClick = { newStatus -> component.onChangeStatusClick(newStatus) }
-                )
+                val bookDetail = screenState.bookDetail
+                when (bookDetail.mode) {
+                    BookDetailMode.VIEW -> {
+                        if (bookDetail.book == null) CommonError()
+                        else
+                            BookDetailScreen(
+                                book = bookDetail.book,
+                                onEditBookClick = { component.onEditBookClick() },
+                                onUpdatePageClick = { newPage -> component.onUpdatePageClick(newPage) },
+                                onChangeStatusClick = { newStatus ->
+                                    component.onChangeStatusClick(
+                                        newStatus
+                                    )
+                                }
+                            )
+                    }
+
+                    BookDetailMode.SEARCH -> {
+                        if (bookDetail.bookItem == null) CommonError()
+                        else {
+                            BookDetailScreenLitres(
+                                bookItem = bookDetail.bookItem,
+                                onBackClick = {},
+                                onConfirmClick = { bookItem -> }
+                            )
+                        }
+                    }
+                }
+
             }
+
             BookDetailScreenStore.State.ScreenState.Loading -> CommonLoading()
         }
     }
@@ -128,7 +155,11 @@ fun BookDetailScreen(
     }
 
     // Внешний Box нужен, чтобы мы могли наложить кнопку редактирования в правый верхний угол
-    Box(modifier = modifier.fillMaxSize().background(Color.White)) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
 
         // Основной скролл-контент
         Column(
@@ -266,7 +297,12 @@ fun BookDetailScreen(
                             tint = Color.Black,
                             modifier = Modifier.size(18.dp)
                         )
-                        Text(text = "Статус", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+                        Text(
+                            text = "Статус",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Black
+                        )
                     }
                 }
 
@@ -290,7 +326,12 @@ fun BookDetailScreen(
                             tint = Color.Black,
                             modifier = Modifier.size(18.dp)
                         )
-                        Text(text = "Я на странице", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+                        Text(
+                            text = "Я на странице",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Black
+                        )
                     }
                 }
             }
@@ -343,10 +384,213 @@ fun BookDetailScreen(
     }
 }
 
+@Composable
+fun BookDetailScreenLitres(
+    bookItem: BookItem,
+    onBackClick: () -> Unit,
+    onConfirmClick: (bookItem: BookItem) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scrollState = rememberScrollState()
+
+    // Внешний Box нужен, чтобы мы могли наложить кнопку редактирования в правый верхний угол
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
+
+        // Основной скролл-контент
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 1. Обложка книги по центру
+            Box(
+                modifier = Modifier
+                    .width(160.dp)
+                    .height(240.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFFB0B3B8)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (bookItem.picture != null) {
+                    AsyncImage(
+                        model = bookItem.picture,
+                        contentDescription = "Обложка книги",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 2. Название книги
+            Text(
+                text = bookItem.title ?: "",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 3. Автор книги
+            Text(
+                text = bookItem.author ?: "",
+                fontSize = 16.sp,
+                color = Color.DarkGray,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 6. Описание книги
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "О книге",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = bookItem.description ?: "",
+                    fontSize = 15.sp,
+                    color = Color.Black,
+                    lineHeight = 22.sp
+                )
+
+                if (bookItem.series != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Серия",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = bookItem.series,
+                        fontSize = 15.sp,
+                        color = Color.Black,
+                        lineHeight = 22.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Жанры",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = bookItem.genresList ?: "",
+                    fontSize = 15.sp,
+                    color = Color.Black,
+                    lineHeight = 22.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Издатель",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = bookItem.publisher ?: "",
+                    fontSize = 15.sp,
+                    color = Color.Black,
+                    lineHeight = 22.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Id",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = bookItem.id.toString(),
+                    fontSize = 15.sp,
+                    color = Color.Black,
+                    lineHeight = 22.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Возраст",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = bookItem.age.toString(),
+                    fontSize = 15.sp,
+                    color = Color.Black,
+                    lineHeight = 22.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Год",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = bookItem.year.toString(),
+                    fontSize = 15.sp,
+                    color = Color.Black,
+                    lineHeight = 22.sp
+                )
+            }
+
+            // ИСПРАВЛЕНИЕ: Вместо 32.dp ставим большой отступ,
+            // который гарантирует, что текст вытолкнется выше системных кнопок и скрытого меню
+            Spacer(
+                modifier = Modifier
+                    .height(80.dp) // Достаточная высота, чтобы перекрыть габариты таб-бара
+                    .navigationBarsPadding() // Дополнительно учитывает системную полоску жестов Android
+            )
+        }
+
+        // --- КНОПКА РЕДАКТИРОВАНИЯ (Карандашик в верхнем правом углу) ---
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(top = 24.dp, end = 24.dp)
+                .size(40.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .clickable { onBackClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Вернуться назад",
+                tint = Color.Black,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
 
 @Composable
 @Preview
-fun BookDetailScreenTest(){
+fun BookDetailScreenTest() {
     BookDetailScreen(
         Book.test(),
         {},

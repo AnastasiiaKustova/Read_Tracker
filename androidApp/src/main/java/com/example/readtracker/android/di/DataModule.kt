@@ -3,15 +3,15 @@ package com.example.readtracker.android.di
 import android.content.Context
 import androidx.room.Room
 import com.example.readtracker.android.data.local.AppDatabase
-import com.example.readtracker.android.data.repository.LitresRepositoryImpl
 import com.example.readtracker.android.data.repository.BooksRepositoryImpl
+import com.example.readtracker.android.data.repository.LitresRepositoryImpl
 import com.example.readtracker.android.data.repository.NotesRepositoryImpl
 import com.example.readtracker.android.domain.model.BookDao
 import com.example.readtracker.android.domain.model.CollectionDao
 import com.example.readtracker.android.domain.model.NoteDao
 import com.example.readtracker.android.domain.model.TagDao
-import com.example.readtracker.android.domain.repository.LitresRepository
 import com.example.readtracker.android.domain.repository.BooksRepository
+import com.example.readtracker.android.domain.repository.LitresRepository
 import com.example.readtracker.android.domain.repository.NotesRepository
 import com.google.gson.Gson
 import dagger.Binds

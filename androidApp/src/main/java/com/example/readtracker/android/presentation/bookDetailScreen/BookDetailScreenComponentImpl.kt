@@ -6,6 +6,8 @@ import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.BookDetailMode
+import com.example.readtracker.android.domain.entity.BookItem
 import com.example.readtracker.android.domain.entity.BookStatus
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -24,10 +26,12 @@ class BookDetailScreenComponentImpl @AssistedInject constructor(
     @Assisted("onChangeStatusClicked") private val onChangeStatusClicked: () -> Unit,
     @Assisted("onUpdatePageClicked") private val onUpdatePageClicked: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
-    @Assisted("bookId") private val bookId: String,
+    @Assisted("bookId") private val bookId: String?,
+    @Assisted("bookItem") private val bookItem: BookItem?,
+    @Assisted("mode") private val mode: BookDetailMode,
 ) : BookDetailScreenComponent, ComponentContext by componentContext {
 
-    private val store = instanceKeeper.getStore { storeFactory.create(bookId) }
+    private val store = instanceKeeper.getStore { storeFactory.create(bookId, bookItem, mode) }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val model: StateFlow<BookDetailScreenStore.State> = store.stateFlow
@@ -76,7 +80,9 @@ class BookDetailScreenComponentImpl @AssistedInject constructor(
     @AssistedFactory
     interface Factory {
         fun create(
-            @Assisted("bookId") bookId: String,
+            @Assisted("bookId") bookId: String?,
+            @Assisted("bookItem") bookItem: BookItem?,
+            @Assisted("mode") mode: BookDetailMode,
             @Assisted("onEditBookClicked") onEditBookClicked: () -> Unit,
             @Assisted("onChangeStatusClicked") onChangeStatusClicked: () -> Unit,
             @Assisted("onUpdatePageClicked") onUpdatePageClicked: () -> Unit,

@@ -28,7 +28,7 @@ fun BookCard(
     author: String,
     currentPage: Int,
     totalPages: Int,
-    coverUri: Uri?,
+    coverUri: Any?,
     onCardClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {

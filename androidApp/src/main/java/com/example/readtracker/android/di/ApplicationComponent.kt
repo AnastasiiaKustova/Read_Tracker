@@ -1,6 +1,7 @@
 package com.example.readtracker.android.di
 
 import android.content.Context
+import com.example.readtracker.android.ReadTrackerApp
 import com.example.readtracker.android.presentation.MainActivity
 import dagger.BindsInstance
 import dagger.Component

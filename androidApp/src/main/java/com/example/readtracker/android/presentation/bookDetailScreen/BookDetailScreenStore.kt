@@ -6,6 +6,9 @@ import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.BookDetail
+import com.example.readtracker.android.domain.entity.BookDetailMode
+import com.example.readtracker.android.domain.entity.BookItem
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.useCases.GetBookByIdUseCase
 import com.example.readtracker.android.domain.useCases.UpdateBookUseCase
@@ -36,7 +39,7 @@ interface BookDetailScreenStore : Store<Intent, State, Label> {
             data object Error : ScreenState
 
             data class Loaded(
-                val book: Book
+                val bookDetail: BookDetail
             ) : ScreenState
         }
     }
@@ -53,19 +56,19 @@ class BookDetailScreenStoreFactory @Inject constructor(
     private val getBookByIdUseCase: GetBookByIdUseCase,
     private val updateBookUseCase: UpdateBookUseCase
 ) {
-    fun create(bookId: String): BookDetailScreenStore =
+    fun create(bookId: String?, bookItem: BookItem?, mode: BookDetailMode): BookDetailScreenStore =
         object : BookDetailScreenStore, Store<Intent, State, Label> by storeFactory.create(
             name = "BookDetailScreenStore",
             initialState = State(
                 screenState = State.ScreenState.Initial
             ),
-            bootstrapper = BootstrapperImpl(bookId),
+            bootstrapper = BootstrapperImpl(bookId, bookItem, mode),
             executorFactory = ::ExecutorImpl,
             reducer = ReducerImpl
         ) {}
 
     private sealed interface Action {
-        data class ScreenLoaded(val book: Book) : Action
+        data class ScreenLoaded(val bookDetail: BookDetail) : Action
 
         data object ScreenLoading : Action
 
@@ -74,7 +77,7 @@ class BookDetailScreenStoreFactory @Inject constructor(
 
     private sealed interface Msg {
 
-        data class ScreenLoaded(val book: Book) : Msg
+        data class ScreenLoaded(val bookDetail: BookDetail) : Msg
 
         data object ScreenLoading : Msg
 
@@ -82,14 +85,33 @@ class BookDetailScreenStoreFactory @Inject constructor(
     }
 
     private inner class BootstrapperImpl(
-        private val bookId: String
+        private val bookId: String?,
+        private val bookItem: BookItem?,
+        private val mode: BookDetailMode
     ) : CoroutineBootstrapper<Action>() {
         override fun invoke() {
             scope.launch {
                 dispatch(Action.ScreenLoading)
                 try {
-                    val book = getBookByIdUseCase(bookId)
-                    dispatch(Action.ScreenLoaded(book))
+                    val bookDetail = when (mode){
+                        BookDetailMode.VIEW -> {
+                            val book = if (bookId == null) {throw Exception("Error") } else { getBookByIdUseCase(bookId) }
+                            BookDetail(
+                                book = book,
+                                bookItem = null,
+                                mode = mode
+                            )
+                        }
+                        BookDetailMode.SEARCH -> {
+                            BookDetail(
+                                book = null,
+                                bookItem = bookItem,
+                                mode = mode
+                            )
+                        }
+                    }
+
+                    dispatch(Action.ScreenLoaded(bookDetail))
                 } catch (e: Exception) {
                     dispatch(Action.ScreenError)
                 }
@@ -102,7 +124,7 @@ class BookDetailScreenStoreFactory @Inject constructor(
             return when (msg) {
                 Msg.ScreenError -> copy(screenState = State.ScreenState.Error)
                 Msg.ScreenLoading -> copy(screenState = State.ScreenState.Loading)
-                is Msg.ScreenLoaded -> copy(screenState = State.ScreenState.Loaded(msg.book))
+                is Msg.ScreenLoaded -> copy(screenState = State.ScreenState.Loaded(msg.bookDetail))
             }
         }
     }
@@ -117,7 +139,8 @@ class BookDetailScreenStoreFactory @Inject constructor(
 
                         if (currentScreenState is State.ScreenState.Loaded) {
                             try {
-                                val currentBook = currentScreenState.book
+                                val bookDetail = currentScreenState.bookDetail
+                                val currentBook = bookDetail.book ?: throw Exception("Error")
 
                                 val newPage = if (intent.newStatus == BookStatus.FINISHED ) {
                                     currentBook.totalPages
@@ -134,7 +157,7 @@ class BookDetailScreenStoreFactory @Inject constructor(
                                     updateBookUseCase(updatedBook)
                                 }
 
-                                dispatch(Msg.ScreenLoaded(book = updatedBook))
+                                dispatch(Msg.ScreenLoaded(bookDetail = bookDetail.copy(book = updatedBook)))
 
                             } catch (e: Exception) {
                                 dispatch(Msg.ScreenError)
@@ -150,7 +173,8 @@ class BookDetailScreenStoreFactory @Inject constructor(
                         if (currentScreenState is State.ScreenState.Loaded) {
                             try {
 
-                                val currentBook = currentScreenState.book
+                                val bookDetail = currentScreenState.bookDetail
+                                val currentBook = bookDetail.book ?: throw Exception("Error")
 
                                 val newStatus =
                                     if (currentBook.totalPages == intent.newPage) {
@@ -168,7 +192,7 @@ class BookDetailScreenStoreFactory @Inject constructor(
                                     updateBookUseCase(updatedBook)
                                 }
 
-                                dispatch(Msg.ScreenLoaded(book = updatedBook))
+                                dispatch(Msg.ScreenLoaded(bookDetail = bookDetail.copy(book = updatedBook)))
 
                             } catch (e: Exception) {
                                 dispatch(Msg.ScreenError)
@@ -182,7 +206,7 @@ class BookDetailScreenStoreFactory @Inject constructor(
         override fun executeAction(action: Action) {
             when (action) {
                 is Action.ScreenLoaded -> dispatch(
-                    Msg.ScreenLoaded(action.book)
+                    Msg.ScreenLoaded(action.bookDetail)
                 )
 
                 Action.ScreenError -> dispatch(

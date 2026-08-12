@@ -9,6 +9,8 @@ import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.popTo
 import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.value.Value
+import com.example.readtracker.android.domain.entity.BookDetailMode
+import com.example.readtracker.android.domain.entity.BookItem
 import com.example.readtracker.android.domain.entity.BookListMode
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.BottomTab
@@ -31,6 +33,8 @@ import com.example.readtracker.android.presentation.root.RootComponent.Child.Not
 import com.example.readtracker.android.presentation.root.RootComponent.Child.NoteScreen
 import com.example.readtracker.android.presentation.root.RootComponent.Child.ProfileScreen
 import com.example.readtracker.android.presentation.root.RootComponent.Child.StatsScreen
+import com.example.readtracker.android.presentation.root.RootComponent.Child.SearchBook
+import com.example.readtracker.android.presentation.searchBookScreen.SearchBookScreenComponentImpl
 import com.example.readtracker.android.presentation.statsScreen.StatsScreenComponentImpl
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -49,6 +53,7 @@ class RootComponentImpl @AssistedInject constructor(
     private val addBookScreenComponentImplFactory: AddBookScreenComponentImpl.Factory,
     private val addNoteScreenComponentImplFactory: AddNoteScreenComponentImpl.Factory,
     private val addCollectionScreenComponentImplFactory: AddCollectionScreenComponentImpl.Factory,
+    private val searchBookScreenComponentImplFactory: SearchBookScreenComponentImpl.Factory,
     @Assisted("onExitApp") private val onExitApp: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext
 ) : RootComponent, ComponentContext by componentContext {
@@ -80,7 +85,11 @@ class RootComponentImpl @AssistedInject constructor(
     // 4. ИСПРАВЛЕНИЕ: Пушим правильный объект навигации деталей книги
     override fun onBookClicked(bookId: String) {
         Log.d("APP_DEBUG", "4. ROOT_NAV: Метод onBookClicked($bookId) выполнен. Делаем navigation.push().")
-        navigation.push(RootComponent.Configuration.BookDetail(bookId))
+        navigation.push(RootComponent.Configuration.BookDetail(bookId = bookId, mode = BookDetailMode.VIEW))
+    }
+
+    override fun onBookClicked(bookItem: BookItem) {
+        navigation.push(RootComponent.Configuration.BookDetail(bookItem = bookItem, mode = BookDetailMode.SEARCH))
     }
 
     override fun onAddBookClicked() {
@@ -97,6 +106,10 @@ class RootComponentImpl @AssistedInject constructor(
 
     override fun onNoteClicked(noteId: String) {
         navigation.push(RootComponent.Configuration.NoteDetail(noteId))
+    }
+
+    override fun onSearchLitresClicked() {
+        navigation.push(RootComponent.Configuration.SearchBook)
     }
 
     override fun onCollectionClick(collectionId: String, openMode: BookListMode){
@@ -168,6 +181,8 @@ class RootComponentImpl @AssistedInject constructor(
             is RootComponent.Configuration.BookDetail -> {
                 val component = bookDetailScreenComponentImplFactory.create(
                     bookId = config.bookId,
+                    bookItem = config.bookItem,
+                    mode = config.mode,
                     onEditBookClicked = {},
                     onUpdatePageClicked = {},
                     onChangeStatusClicked = {},
@@ -210,7 +225,7 @@ class RootComponentImpl @AssistedInject constructor(
             RootComponent.Configuration.AddBook -> {
 
                 val component = addBookScreenComponentImplFactory.create(
-                    onSearchLitresClicked = {},
+                    onSearchLitresClicked = { onSearchLitresClicked() },
                     onSaveBookClicked = { navigation.pop()},
                     componentContext = componentContext
                 )
@@ -245,6 +260,15 @@ class RootComponentImpl @AssistedInject constructor(
                 AddCollection(createdComponent).also {
                     component = it
                 }
+            }
+
+            RootComponent.Configuration.SearchBook -> {
+                val component = searchBookScreenComponentImplFactory.create(
+                    onBookClicked = { bookItem -> onBookClicked(bookItem) },
+                    onBackClicked = { navigation.pop()},
+                    componentContext = componentContext
+                )
+                SearchBook(component)
             }
         }
     }

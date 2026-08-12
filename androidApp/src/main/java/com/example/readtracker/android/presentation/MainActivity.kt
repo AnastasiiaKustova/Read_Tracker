@@ -8,6 +8,14 @@ import com.example.readtracker.android.presentation.root.RootComponentImpl
 import com.example.readtracker.android.presentation.root.RootContent
 import com.example.readtracker.android.ReadTrackerApp
 import javax.inject.Inject
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
+
+val supabase = createSupabaseClient(
+
+) {
+    install(Postgrest)
+}
 
 class MainActivity : ComponentActivity() {
 

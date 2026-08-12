@@ -3,6 +3,8 @@ package com.example.readtracker.android.presentation.root
 import android.os.Parcelable
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
+import com.example.readtracker.android.domain.entity.BookDetailMode
+import com.example.readtracker.android.domain.entity.BookItem
 import com.example.readtracker.android.domain.entity.BookListMode
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.BottomTab
@@ -15,6 +17,7 @@ import com.example.readtracker.android.presentation.mainScreen.MainScreenCompone
 import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailScreenComponent
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenComponent
 import com.example.readtracker.android.presentation.profileScreen.ProfileScreenComponent
+import com.example.readtracker.android.presentation.searchBookScreen.SearchBookScreenComponent
 import com.example.readtracker.android.presentation.statsScreen.StatsScreenComponent
 import kotlinx.parcelize.Parcelize
 
@@ -32,7 +35,11 @@ interface RootComponent {
 
     fun onBookClicked(bookId: String)
 
+    fun onBookClicked(bookItem: BookItem)
+
     fun onNoteClicked(bookId: String)
+
+    fun onSearchLitresClicked()
 
     fun onCollectionClick(collectionId: String, openMode: BookListMode)
 
@@ -46,7 +53,7 @@ interface RootComponent {
         @Parcelize data object Notes : Configuration()
         @Parcelize data object Stats : Configuration()
         @Parcelize data object Profile : Configuration()
-        @Parcelize data class BookDetail(val bookId: String) : Configuration()
+        @Parcelize data class BookDetail(val mode: BookDetailMode, val bookId: String? = null, val bookItem: BookItem? = null) : Configuration()
         @Parcelize data class NoteDetail(val noteId: String) : Configuration()
         @Parcelize data class BookList(
             val collectionId: String?,
@@ -57,7 +64,7 @@ interface RootComponent {
         @Parcelize data object AddBook : Configuration()
         @Parcelize data object AddNote : Configuration()
         @Parcelize data object AddCollection : Configuration()
-
+        @Parcelize data object SearchBook : Configuration()
     }
 
     sealed interface Child{
@@ -71,5 +78,6 @@ interface RootComponent {
         class AddBook(val component: AddBookScreenComponent) : Child
         class AddNote(val component: AddNoteScreenComponent) : Child
         class AddCollection(val component: AddCollectionScreenComponent) : Child
+        class SearchBook(val component: SearchBookScreenComponent) : Child
     }
 }

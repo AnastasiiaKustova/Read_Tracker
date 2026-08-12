@@ -4,10 +4,4 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun StatsScreenContent(component: StatsScreenComponent) {
-    StatsScreen()
-}
-
-@Composable
-private fun StatsScreen(){
-
 }
