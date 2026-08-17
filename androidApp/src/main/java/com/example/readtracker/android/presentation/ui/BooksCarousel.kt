@@ -33,6 +33,7 @@ fun BooksCarousel(bookSet: Set<Book>, onBookClick: (String) -> Unit, modifier: M
             author = book.author,
             currentPage = book.currentPage,
             totalPages = book.totalPages,
+            coverUri = book.coverUri,
             onCardClick = { onBookClick(book.id) }
         )
     }

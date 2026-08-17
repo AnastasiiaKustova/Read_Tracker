@@ -13,7 +13,7 @@ interface TagDao {
     fun getAllTagsFlow(): Flow<List<TagEntity>>
 
     @Query("SELECT * FROM tags")
-    fun getAllTags(): List<TagEntity>
+    suspend fun getAllTags(): List<TagEntity>
 
     @Query("SELECT * FROM tags WHERE id = :tagId")
     suspend fun getTagById(tagId: String): TagEntity?

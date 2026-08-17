@@ -1,5 +1,6 @@
 package com.example.readtracker.android.presentation.bookDetailScreen
 
+import com.example.readtracker.android.domain.entity.BookStatus
 import kotlinx.coroutines.flow.StateFlow
 
 interface BookDetailScreenComponent {
@@ -8,7 +9,7 @@ interface BookDetailScreenComponent {
 
     fun onEditBookClick()
 
-    fun onChangeStatusClick()
+    fun onChangeStatusClick(newStatus: BookStatus)
 
-    fun onUpdatePageClick()
+    fun onUpdatePageClick(newPage: Int)
 }

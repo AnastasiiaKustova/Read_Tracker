@@ -6,18 +6,22 @@ import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.useCases.GetBookByIdUseCase
+import com.example.readtracker.android.domain.useCases.UpdateBookUseCase
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.Intent
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.Label
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.State
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 interface BookDetailScreenStore : Store<Intent, State, Label> {
     sealed interface Intent {
         data object ClickEditBook : Intent
-        data object ClickChangeStatus : Intent
-        data object ClickUpdatePage : Intent
+        data class ClickChangeStatus(val newStatus: BookStatus) : Intent
+        data class ClickUpdatePage(val newPage: Int) : Intent
     }
 
     data class State(
@@ -46,7 +50,8 @@ interface BookDetailScreenStore : Store<Intent, State, Label> {
 
 class BookDetailScreenStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
-    private val getBookByIdUseCase: GetBookByIdUseCase
+    private val getBookByIdUseCase: GetBookByIdUseCase,
+    private val updateBookUseCase: UpdateBookUseCase
 ) {
     fun create(bookId: String): BookDetailScreenStore =
         object : BookDetailScreenStore, Store<Intent, State, Label> by storeFactory.create(
@@ -78,15 +83,15 @@ class BookDetailScreenStoreFactory @Inject constructor(
 
     private inner class BootstrapperImpl(
         private val bookId: String
-    ) : CoroutineBootstrapper<BookDetailScreenStoreFactory.Action>() {
+    ) : CoroutineBootstrapper<Action>() {
         override fun invoke() {
             scope.launch {
-                dispatch(BookDetailScreenStoreFactory.Action.ScreenLoading)
+                dispatch(Action.ScreenLoading)
                 try {
                     val book = getBookByIdUseCase(bookId)
-                    dispatch(BookDetailScreenStoreFactory.Action.ScreenLoaded(book))
+                    dispatch(Action.ScreenLoaded(book))
                 } catch (e: Exception) {
-                    dispatch(BookDetailScreenStoreFactory.Action.ScreenError)
+                    dispatch(Action.ScreenError)
                 }
             }
         }
@@ -106,18 +111,87 @@ class BookDetailScreenStoreFactory @Inject constructor(
         override fun executeIntent(intent: Intent) {
             when (intent) {
                 Intent.ClickEditBook -> publish(Label.ClickEditBook)
-                Intent.ClickChangeStatus -> publish(Label.ClickChangeStatus)
-                Intent.ClickUpdatePage -> publish(Label.ClickUpdatePage)
+                is Intent.ClickChangeStatus -> {
+                    scope.launch {
+                        val currentScreenState = state().screenState
+
+                        if (currentScreenState is State.ScreenState.Loaded) {
+                            try {
+                                val currentBook = currentScreenState.book
+
+                                val newPage = if (intent.newStatus == BookStatus.FINISHED ) {
+                                    currentBook.totalPages
+                                } else {
+                                    currentBook.currentPage
+                                }
+
+                                val updatedBook = currentBook.copy(
+                                    bookStatus = intent.newStatus,
+                                    currentPage = newPage
+                                )
+
+                                withContext(Dispatchers.IO) {
+                                    updateBookUseCase(updatedBook)
+                                }
+
+                                dispatch(Msg.ScreenLoaded(book = updatedBook))
+
+                            } catch (e: Exception) {
+                                dispatch(Msg.ScreenError)
+                            }
+                        }
+                    }
+                }
+
+                is Intent.ClickUpdatePage -> {
+                    scope.launch {
+                        val currentScreenState = state().screenState
+
+                        if (currentScreenState is State.ScreenState.Loaded) {
+                            try {
+
+                                val currentBook = currentScreenState.book
+
+                                val newStatus =
+                                    if (currentBook.totalPages == intent.newPage) {
+                                        BookStatus.FINISHED
+                                    } else {
+                                        currentBook.bookStatus
+                                    }
+
+                                val updatedBook = currentBook.copy(
+                                    currentPage = intent.newPage,
+                                    bookStatus = newStatus
+                                )
+
+                                withContext(Dispatchers.IO) {
+                                    updateBookUseCase(updatedBook)
+                                }
+
+                                dispatch(Msg.ScreenLoaded(book = updatedBook))
+
+                            } catch (e: Exception) {
+                                dispatch(Msg.ScreenError)
+                            }
+                        }
+                    }
+                }
             }
         }
+
         override fun executeAction(action: Action) {
             when (action) {
                 is Action.ScreenLoaded -> dispatch(
-                    Msg.ScreenLoaded(action.book))
+                    Msg.ScreenLoaded(action.book)
+                )
+
                 Action.ScreenError -> dispatch(
-                    Msg.ScreenError)
+                    Msg.ScreenError
+                )
+
                 Action.ScreenLoading -> dispatch(
-                    Msg.ScreenLoading)
+                    Msg.ScreenLoading
+                )
             }
         }
     }

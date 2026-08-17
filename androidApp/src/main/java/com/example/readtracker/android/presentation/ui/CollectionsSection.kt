@@ -67,6 +67,7 @@ fun CollectionsSection(
                 CollectionCard(
                     title = collection.title,
                     bookCount = collection.books.size,
+                    books = collection.books,
                     onCollectionClick = {onCollectionClick(collection.id)}
                 )
             }

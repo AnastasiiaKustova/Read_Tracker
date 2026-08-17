@@ -1,5 +1,6 @@
 package com.example.readtracker.android.presentation.ui
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,11 +10,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.example.readtracker.android.core.formatWithSpace
 import org.jetbrains.annotations.TestOnly
 import kotlin.math.round
@@ -25,6 +28,7 @@ fun BookCard(
     author: String,
     currentPage: Int,
     totalPages: Int,
+    coverUri: Uri?,
     onCardClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -133,7 +137,16 @@ fun BookCard(
                 .offset(y = (-20).dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color(0xFFB0B3B8))
-        )
+        ){
+            if (coverUri != null) {
+                AsyncImage(
+                    model = coverUri,
+                    contentDescription = "Обложка книги",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
     }
 }
 
@@ -144,6 +157,6 @@ fun BookCardTest(){
         "Очень длинное название",
         "Автор Такойто",
         12345,
-        15456, {}
+        15456, null, {}
     )
 }

@@ -14,7 +14,9 @@ import com.example.readtracker.android.presentation.noteScreen.NoteScreenStore.L
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenStore.Label.ClickAddNote
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenStore.Label.ClickNote
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenStore.State
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 interface NoteScreenStore : Store<Intent, State, Label> {
@@ -93,8 +95,11 @@ class NoteScreenStoreFactory @Inject constructor(
             scope.launch {
                 dispatch(Action.ScreenLoading)
                 try {
-                    val notes = getNotesUseCase()
-                    val tags = getTagsUseCase()
+                    val (notes, tags) = withContext(Dispatchers.IO) {
+                        val loadedNotes = getNotesUseCase()
+                        val loadedTags = getTagsUseCase()
+                        Pair(loadedNotes, loadedTags)
+                    }
                     dispatch(Action.ScreenLoaded(notes = notes, tags = tags))
                 } catch (e: Exception) {
                     dispatch(Action.ScreenError)

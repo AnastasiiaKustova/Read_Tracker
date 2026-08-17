@@ -13,6 +13,8 @@ interface BooksRepository {
 
     suspend fun addBook(addBookInput: AddBookInput)
 
+    suspend fun updateBook(updatedBook: Book)
+
     suspend fun getBook(id: String): Book
 
     suspend fun getBooks(collectionId: String?, bookStatus: BookStatus?): Set<Book>

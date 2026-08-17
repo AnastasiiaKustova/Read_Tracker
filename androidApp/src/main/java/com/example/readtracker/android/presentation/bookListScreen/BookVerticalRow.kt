@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,10 +22,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import com.example.readtracker.android.domain.entity.Book
 import com.example.readtracker.android.domain.entity.BookStatus
 import kotlin.math.round
@@ -56,7 +61,20 @@ fun BookVerticalRow(
                 .height(100.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(Color(0xFFB0B3B8))
-        )
+        ){
+            if (book.coverUri != null) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(book.coverUri)
+                        .memoryCacheKey(book.id) // Жестко привязываем кэш в оперативной памяти к ID книги!
+                        .diskCacheKey(book.id)   // Жестко привязываем кэш на диске к ID книги!
+                        .build(),
+                    contentDescription = "Обложка книги",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.width(16.dp))
 

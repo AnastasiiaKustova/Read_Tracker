@@ -6,6 +6,7 @@ import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.BookStatus
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -64,12 +65,12 @@ class BookDetailScreenComponentImpl @AssistedInject constructor(
         store.accept(BookDetailScreenStore.Intent.ClickEditBook)
     }
 
-    override fun onChangeStatusClick() {
-        store.accept(BookDetailScreenStore.Intent.ClickChangeStatus)
+    override fun onChangeStatusClick(newStatus: BookStatus) {
+        store.accept(BookDetailScreenStore.Intent.ClickChangeStatus(newStatus))
     }
 
-    override fun onUpdatePageClick() {
-        store.accept(BookDetailScreenStore.Intent.ClickUpdatePage)
+    override fun onUpdatePageClick(newPage: Int) {
+        store.accept(BookDetailScreenStore.Intent.ClickUpdatePage(newPage))
     }
 
     @AssistedFactory

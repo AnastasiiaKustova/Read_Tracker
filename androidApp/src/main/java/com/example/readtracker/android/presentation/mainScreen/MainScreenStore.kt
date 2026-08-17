@@ -12,10 +12,14 @@ import com.example.readtracker.android.domain.entity.Note
 import com.example.readtracker.android.domain.entity.Tag
 import com.example.readtracker.android.domain.useCases.GetBooksUseCase
 import com.example.readtracker.android.domain.useCases.GetCollectionsUseCase
+import com.example.readtracker.android.domain.useCases.ObserveMainScreenDataUseCase
 import com.example.readtracker.android.presentation.mainScreen.MainScreenStore.Intent
 import com.example.readtracker.android.presentation.mainScreen.MainScreenStore.Label
 import com.example.readtracker.android.presentation.mainScreen.MainScreenStore.State
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 interface MainScreenStore : Store<Intent, State, Label> {
@@ -56,8 +60,7 @@ interface MainScreenStore : Store<Intent, State, Label> {
 
 class MainScreenStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
-    private val getBooksUseCase: GetBooksUseCase,
-    private val getCollectionsUseCase: GetCollectionsUseCase
+    private val observeMainScreenDataUseCase: ObserveMainScreenDataUseCase
 ) {
     fun create(): MainScreenStore =
         object : MainScreenStore, Store<Intent, State, Label> by storeFactory.create(
@@ -93,18 +96,36 @@ class MainScreenStoreFactory @Inject constructor(
         data object ScreenError : Msg
     }
 
-    private inner class BootstrapperImpl: CoroutineBootstrapper<Action>() {
+    private inner class BootstrapperImpl : CoroutineBootstrapper<Action>() {
         override fun invoke() {
+            // КОРУТИНА 1: Быстрый разовый запуск экрана и включение лоадера
             scope.launch {
                 dispatch(Action.ScreenLoading)
+                // Здесь при необходимости можно вызвать разовый прогрев кэша базы данных
+            }
+
+            // КОРУТИНА 2: Бесконечное фоновое прослушивание вашей заготовки потока
+            // Она работает в своем изолированном потоке и никогда не заблокирует КОРУТИНУ 1
+            scope.launch {
                 try {
-                    val books = getBooksUseCase(
-                        collectionId = null,
-                        bookStatus = BookStatus.READING
-                    )
-                    val collections = getCollectionsUseCase()
-                    dispatch(Action.ScreenLoaded(books = books, collections = collections))
+                    withContext(Dispatchers.IO) {
+                        observeMainScreenDataUseCase()
+                            .distinctUntilChanged()
+                            .collect { mainScreenItem ->
+                                // Как только в StateFlow репозитория прилетают свежие данные,
+                                // эта параллельная корутина мгновенно отправляет их в UI
+                                withContext(Dispatchers.Main) {
+                                    dispatch(
+                                        Action.ScreenLoaded(
+                                            books = mainScreenItem.books,
+                                            collections = mainScreenItem.collections
+                                        )
+                                    )
+                                }
+                            }
+                    }
                 } catch (e: Exception) {
+                    // Если в потоке базы данных произойдет сбой, переключаем на экран ошибки
                     dispatch(Action.ScreenError)
                 }
             }
@@ -116,7 +137,12 @@ class MainScreenStoreFactory @Inject constructor(
             return when (msg) {
                 Msg.ScreenError -> copy(screenState = State.ScreenState.Error)
                 Msg.ScreenLoading -> copy(screenState = State.ScreenState.Loading)
-                is Msg.ScreenLoaded -> copy(screenState = State.ScreenState.Loaded(books = msg.books, collections = msg.collections))
+                is Msg.ScreenLoaded -> copy(
+                    screenState = State.ScreenState.Loaded(
+                        books = msg.books,
+                        collections = msg.collections
+                    )
+                )
             }
         }
     }
@@ -124,7 +150,13 @@ class MainScreenStoreFactory @Inject constructor(
     private inner class ExecutorImpl : CoroutineExecutor<Intent, Action, State, Msg, Label>() {
         override fun executeAction(action: Action) {
             when (action) {
-                is Action.ScreenLoaded -> dispatch(Msg.ScreenLoaded(books = action.books, collections = action.collections))
+                is Action.ScreenLoaded -> dispatch(
+                    Msg.ScreenLoaded(
+                        books = action.books,
+                        collections = action.collections
+                    )
+                )
+
                 Action.ScreenError -> dispatch(Msg.ScreenError)
                 Action.ScreenLoading -> dispatch(Msg.ScreenLoading)
             }

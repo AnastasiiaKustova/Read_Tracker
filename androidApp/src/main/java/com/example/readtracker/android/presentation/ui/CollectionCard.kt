@@ -9,17 +9,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import com.example.readtracker.android.domain.entity.Book
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollectionCard(
     title: String,
     bookCount: Int,
+    books: Set<Book>,
     onCollectionClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -65,15 +71,39 @@ fun CollectionCard(
                         .width(70.dp) // Запас ширины под смещение мини-обложек
                 ) {
                     for (i in 0 until coversToShow) {
-                        Box(
-                            modifier = Modifier
-                                .offset(x = (i * 12).dp) // Каждая следующая сдвигается вправо
-                                .width(28.dp)
-                                .fillMaxHeight()
-                                .clip(RoundedCornerShape(6.dp))
-                                // Делаем цвет каждой следующей чуть темнее для объема
-                                .background(Color(0xFFB0B3B8 - (i * 0x101010)))
-                        )
+                        // 1. Безопасно достаем книгу из списка по индексу i
+                        val book = books.toList().getOrNull(i)
+
+                        if (book != null) {
+                            Box(
+                                modifier = Modifier
+                                    .offset(x = (i * 12).dp) // Каждая следующая сдвигается вправо
+                                    .width(28.dp)
+                                    .fillMaxHeight()
+                                    .clip(RoundedCornerShape(6.dp))
+                                    // Вычисляем цвет фона. Для безопасности Котлина лучше использовать функцию Color.copy или фиксированные сдвиги
+                                    .background(Color(0xFFB0B3B8 - (i * 0x101010))),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                // 2. ИСПРАВЛЕНИЕ: Обязательно проверяем наличие Uri
+                                if (book.coverUri != null) {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(book.coverUri)
+                                            .memoryCacheKey(book.id) // Уникальный ключ по ID книги
+                                            .diskCacheKey(book.id)
+                                            .build(),
+                                        contentDescription = "Обложка книги в стопке",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    // 3. ИСПРАВЛЕНИЕ: Если обложки нет, оставляем Box пустым (он просто зальется цветом фона),
+                                    // но принудительно заставляем Coil стереть старую картинку из этой переиспользованной ячейки!
+                                    Spacer(modifier = Modifier.fillMaxSize())
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -95,6 +125,7 @@ fun CollectionCardTest(){
     CollectionCard(
         "Тест",
         5,
+        emptySet(),
         {}
     )
 }
