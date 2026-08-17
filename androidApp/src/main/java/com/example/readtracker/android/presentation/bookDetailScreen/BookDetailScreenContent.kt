@@ -1,7 +1,5 @@
 package com.example.readtracker.android.presentation.bookDetailScreen
 
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +22,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -47,18 +47,20 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import com.example.readtracker.android.core.formatWithSpace
-import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.book.Book
 import com.example.readtracker.android.domain.entity.BookDetailMode
-import com.example.readtracker.android.domain.entity.BookItem
+import com.example.readtracker.android.domain.entity.database.BookItem
 import com.example.readtracker.android.domain.entity.BookStatus
+import com.example.readtracker.android.domain.entity.database.CategoryItem
 import com.example.readtracker.android.presentation.common.CommonError
 import com.example.readtracker.android.presentation.common.CommonInitial
 import com.example.readtracker.android.presentation.common.CommonLoading
-import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailScreenStore
 import com.example.readtracker.android.presentation.ui.ChangeStatusDialog
 import com.example.readtracker.android.presentation.ui.StatItem
 import com.example.readtracker.android.presentation.ui.UpdatePageDialog
 import org.chromium.base.Log
+import java.io.File
+import java.net.URI
 import kotlin.math.round
 
 @Composable
@@ -78,7 +80,8 @@ fun BookDetailScreenContent(component: BookDetailScreenComponent) {
                         else
                             BookDetailScreen(
                                 book = bookDetail.book,
-                                onEditBookClick = { component.onEditBookClick() },
+                                categories = bookDetail.categories,
+                                onEditBookClick = { component.onEditBookClick(bookDetail.book) },
                                 onUpdatePageClick = { newPage -> component.onUpdatePageClick(newPage) },
                                 onChangeStatusClick = { newStatus ->
                                     component.onChangeStatusClick(
@@ -93,8 +96,9 @@ fun BookDetailScreenContent(component: BookDetailScreenComponent) {
                         else {
                             BookDetailScreenLitres(
                                 bookItem = bookDetail.bookItem,
+                                categories = bookDetail.categories,
                                 onBackClick = {},
-                                onConfirmClick = { bookItem -> }
+                                onConfirmClick = { bookItem -> component.onChooseClick(bookItem) }
                             )
                         }
                     }
@@ -110,6 +114,7 @@ fun BookDetailScreenContent(component: BookDetailScreenComponent) {
 @Composable
 fun BookDetailScreen(
     book: Book,
+    categories: List<CategoryItem>,
     onEditBookClick: () -> Unit,       // Лямбда для карандашика редактирования
     onChangeStatusClick: (BookStatus) -> Unit,   // Лямбда для кнопки смены статуса
     onUpdatePageClick: (Int) -> Unit,     // Лямбда для кнопки ввода страницы
@@ -181,11 +186,23 @@ fun BookDetailScreen(
                 contentAlignment = Alignment.Center
             ) {
                 if (book.coverUri != null) {
+                    val lastModified = remember(book.coverUri) {
+                        try {
+                            // Если это локальный файл приложения, берем время его изменения
+                            if (book.coverUri != null && book.coverUri.scheme == "file") {
+                                File(URI(book.coverUri.toString())).lastModified().toString()
+                            } else {
+                                System.currentTimeMillis().toString() // Для сети генерируем свежий ключ
+                            }
+                        } catch (e: Exception) {
+                            ""
+                        }
+                    }
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(book.coverUri)
-                            .memoryCacheKey(book.id) // Жестко привязываем кэш в оперативной памяти к ID книги!
-                            .diskCacheKey(book.id)   // Жестко привязываем кэш на диске к ID книги!
+                            .memoryCacheKey("${book.id}_$lastModified")
+                            .diskCacheKey("${book.id}_$lastModified")
                             .build(),
                         contentDescription = "Обложка книги",
                         modifier = Modifier.fillMaxSize(),
@@ -340,6 +357,22 @@ fun BookDetailScreen(
 
             // 6. Описание книги
             Column(modifier = Modifier.fillMaxWidth()) {
+                if (book.series.isNotEmpty()) {
+                    Text(
+                        text = "Серия",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = book.series,
+                        fontSize = 15.sp,
+                        color = Color.Black,
+                        lineHeight = 22.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 Text(
                     text = "О книге",
                     fontSize = 18.sp,
@@ -387,6 +420,7 @@ fun BookDetailScreen(
 @Composable
 fun BookDetailScreenLitres(
     bookItem: BookItem,
+    categories: List<CategoryItem>,
     onBackClick: () -> Unit,
     onConfirmClick: (bookItem: BookItem) -> Unit,
     modifier: Modifier = Modifier
@@ -421,7 +455,11 @@ fun BookDetailScreenLitres(
             ) {
                 if (bookItem.picture != null) {
                     AsyncImage(
-                        model = bookItem.picture,
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(bookItem.picture)
+                            .memoryCacheKey(bookItem.id.toString()) // Уникальный ключ по ID книги
+                            .diskCacheKey(bookItem.id.toString())
+                            .build(),
                         contentDescription = "Обложка книги",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -495,7 +533,9 @@ fun BookDetailScreenLitres(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = bookItem.genresList ?: "",
+                    text = categories.joinToString(separator = ", ") { category ->
+                        category.title // Указываем, какое именно поле брать для склейки
+                    } + " (" + bookItem.genresList + ")",
                     fontSize = 15.sp,
                     color = Color.Black,
                     lineHeight = 22.sp
@@ -556,6 +596,19 @@ fun BookDetailScreenLitres(
                     color = Color.Black,
                     lineHeight = 22.sp
                 )
+
+                Button(
+                    onClick = {
+                        onConfirmClick(bookItem)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                ) {
+                    Text(text = "Добавить книгу", fontSize = 16.sp, color = Color.White)
+                }
             }
 
             // ИСПРАВЛЕНИЕ: Вместо 32.dp ставим большой отступ,
@@ -585,15 +638,4 @@ fun BookDetailScreenLitres(
             )
         }
     }
-}
-
-
-@Composable
-@Preview
-fun BookDetailScreenTest() {
-    BookDetailScreen(
-        Book.test(),
-        {},
-        {},
-        {})
 }

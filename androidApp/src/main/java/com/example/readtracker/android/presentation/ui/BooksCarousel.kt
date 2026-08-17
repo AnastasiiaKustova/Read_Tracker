@@ -7,10 +7,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.readtracker.android.domain.entity.Book
-import com.example.readtracker.android.domain.entity.BookStatus
+import com.example.readtracker.android.domain.entity.book.Book
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -29,6 +27,7 @@ fun BooksCarousel(bookSet: Set<Book>, onBookClick: (String) -> Unit, modifier: M
         val book = bookSet.elementAt(page)
 
         BookCard(
+            id = book.id,
             title = book.title,
             author = book.author,
             currentPage = book.currentPage,

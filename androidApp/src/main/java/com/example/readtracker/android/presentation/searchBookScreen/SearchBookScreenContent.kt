@@ -17,87 +17,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.readtracker.android.domain.entity.Book
-import com.example.readtracker.android.domain.entity.BookItem
+import com.example.readtracker.android.domain.entity.book.Book
+import com.example.readtracker.android.domain.entity.database.BookItem
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.presentation.bookListScreen.BookVerticalRow
-import com.example.readtracker.android.presentation.supabase
-import io.github.jan.supabase.postgrest.from
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
-import kotlin.time.Duration.Companion.milliseconds
+import com.example.readtracker.android.presentation.common.CommonError
 
 @Composable
 fun SearchBookScreenContent(component: SearchBookScreenComponent) {
-    StatsScreen(
-        onBookClick = { book -> component.onBookClick(book) },
-        onBackClick = { component.onBackClick() }
-    )
-}
 
-@Composable
-private fun StatsScreen(
-    onBookClick: (BookItem) -> Unit,
-    onBackClick: () -> Unit
-) {
-    var books by remember { mutableStateOf<List<BookItem>>(listOf()) }
-    var isLoading by remember { mutableStateOf(true) }
+    val state by component.model.collectAsState()
 
-    // 1. Переменная для хранения текста поиска
-    var searchQuery by remember { mutableStateOf("") }
-
-    // 2. LaunchedEffect теперь будет перезапускаться КАЖДЫЙ РАЗ, когда меняется searchQuery
-    LaunchedEffect(searchQuery) {
-        if (isLoading == false) {delay(500.milliseconds)}
-        isLoading = true
-        withContext(Dispatchers.IO) {
-            try {
-                if (searchQuery.isBlank()) {
-                    // Если строка поиска пустая, просто берем первые книги каталога
-//                    books = supabase.from("books")
-//                        .select {
-//                            range(0, 19) // Возьмем 20 книг для красивого заполнения экрана
-//                        }
-//                        .decodeList<BookItem>()
-                    books = emptyList()
-                } else {
-                    // 🌟 Единый живой поиск по названию (name) и автору (author) через индекс, который мы создали
-                    val rawBooks = supabase.from("books")
-                        .select {
-                            // Ищем, содержит ли колонка "name" (название книги) введенный текст.
-                            // Символы % по бокам означают поиск в любой части строки без учета регистра.
-                            filter {
-                                or {
-                                    // Условие 1: ищем по названию книги
-                                    ilike("name", "%$searchQuery%")
-
-                                    // Условие 2: ищем по имени автора
-                                    ilike("author", "%$searchQuery%")
-                                }
-                            }
-                            range(0, 19)
-                        }
-                        .decodeList<BookItem>()
-                    books = rawBooks.distinctBy { it.id }.distinctBy { it.title }.sortedBy { it.title }
-                }
-                isLoading = false
-            } catch (e: Exception) {
-                e.printStackTrace()
-                isLoading = false
-            }
-        }
-    }
-
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         Text(
             text = "Каталог книг",
             style = MaterialTheme.typography.headlineMedium,
@@ -107,8 +47,8 @@ private fun StatsScreen(
 
         // 3. Компонент строки поиска
         OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it }, // Обновляем текст при вводе
+            value = state.searchQuery,
+            onValueChange = { component.onQueryChange(it) }, // Обновляем текст при вводе
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
@@ -118,8 +58,8 @@ private fun StatsScreen(
             },
             trailingIcon = {
                 // Если пользователь что-то ввел, показываем крестик для быстрой очистки поля
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { searchQuery = "" }) {
+                if (state.searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { component.onQueryChange("") }) {
                         Icon(Icons.Default.Clear, contentDescription = "Очистить")
                     }
                 }
@@ -127,35 +67,63 @@ private fun StatsScreen(
             singleLine = true // Строка ввода должна быть строго в один ряд
         )
 
-        if (isLoading) {
+        if (state.isLoading) {
             Text(text = "Загрузка...", style = MaterialTheme.typography.bodyLarge)
-        } else if (books.isEmpty()) {
-            Text(text = "Ничего не найдено по запросу \"$searchQuery\"", style = MaterialTheme.typography.bodyLarge)
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(
-                    items = books,
-                    key = { book -> book.id }
-                ) { book ->
-                    BookVerticalRow(
-                        book = Book(
-                            id = book.id.toString(),
-                            title = book.title ?: "Без названия",
-                            author = book.author ?: "Автор не указан",
-                            description = book.description ?: "Описание отсутствует",
-                            coverUri = book.picture?.let { Uri.parse(it) },
-                            totalPages = 0,
-                            currentPage = 0,
-                            quotesCount = 0,
-                            bookStatus = BookStatus.READING
-                        ),
-                        isSelectionMode = false,
-                        isSelected = false,
-                        onBookClick = { onBookClick(book) },
+        }
+
+        when (val contentState = state.screenState) {
+            SearchBookScreenStore.State.ScreenState.Initial -> {}
+            SearchBookScreenStore.State.ScreenState.Error -> CommonError()
+            is SearchBookScreenStore.State.ScreenState.Loaded -> {
+                // Передаем сет книг в список результатов
+                if (!state.isLoading)
+                    StatsScreen(
+                        searchQuery = state.searchQuery,
+                        books = contentState.books.toList(),
+                        onBookClick = { book -> component.onBookClick(book) },
                     )
-                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatsScreen(
+    searchQuery: String,
+    books: List<BookItem>,
+    onBookClick: (BookItem) -> Unit,
+) {
+    if (books.isEmpty()) {
+        Text(
+            text = "Ничего не найдено по запросу \"$searchQuery\"",
+            style = MaterialTheme.typography.bodyLarge
+        )
+    } else {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(
+                items = books,
+                key = { book -> book.id }
+            ) { book ->
+                BookVerticalRow(
+                    book = Book(
+                        id = book.id.toString(),
+                        title = book.title ?: "Без названия",
+                        author = book.author ?: "Автор не указан",
+                        description = book.description ?: "Описание отсутствует",
+                        coverUri = book.picture?.let { Uri.parse(it) },
+                        totalPages = 0,
+                        currentPage = 0,
+                        quotesCount = 0,
+                        series = book.series ?: "",
+                        idLitres = book.id,
+                        bookStatus = BookStatus.READING
+                    ),
+                    isSelectionMode = false,
+                    isSelected = false,
+                    onBookClick = { onBookClick(book) },
+                )
             }
         }
     }

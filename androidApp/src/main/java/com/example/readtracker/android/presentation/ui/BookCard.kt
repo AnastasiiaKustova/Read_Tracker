@@ -6,29 +6,34 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import com.example.readtracker.android.core.formatWithSpace
-import org.jetbrains.annotations.TestOnly
+import java.io.File
+import java.net.URI
 import kotlin.math.round
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookCard(
+    id: String?,
     title: String,
     author: String,
     currentPage: Int,
     totalPages: Int,
-    coverUri: Any?,
+    coverUri: Uri?,
     onCardClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -127,6 +132,19 @@ fun BookCard(
             }
         }
 
+        val lastModified = remember(coverUri) {
+            try {
+                // Если это локальный файл приложения, берем время его изменения
+                if (coverUri != null && coverUri.scheme == "file") {
+                    File(URI(coverUri.toString())).lastModified().toString()
+                } else {
+                    System.currentTimeMillis().toString() // Для сети генерируем свежий ключ
+                }
+            } catch (e: Exception) {
+                ""
+            }
+        }
+
         // Обложка
         Box(
             modifier = Modifier
@@ -140,7 +158,11 @@ fun BookCard(
         ){
             if (coverUri != null) {
                 AsyncImage(
-                    model = coverUri,
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(coverUri)
+                        .memoryCacheKey("${id}_$lastModified")
+                        .diskCacheKey("${id}_$lastModified")
+                        .build(),
                     contentDescription = "Обложка книги",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -154,6 +176,7 @@ fun BookCard(
 @Composable
 fun BookCardTest(){
     BookCard(
+        "",
         "Очень длинное название",
         "Автор Такойто",
         12345,

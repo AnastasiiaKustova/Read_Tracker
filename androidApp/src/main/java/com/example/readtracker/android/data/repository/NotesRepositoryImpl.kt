@@ -4,11 +4,11 @@ import com.example.readtracker.android.data.mapper.toDomain
 import com.example.readtracker.android.data.mapper.toDomainSet
 import com.example.readtracker.android.data.mapper.toEntity
 import com.example.readtracker.android.data.mapper.toEntityList
-import com.example.readtracker.android.domain.entity.AddNoteInput
-import com.example.readtracker.android.domain.entity.AddTagInput
-import com.example.readtracker.android.domain.entity.Note
-import com.example.readtracker.android.domain.entity.Tag
-import com.example.readtracker.android.domain.entity.toNote
+import com.example.readtracker.android.domain.entity.note.AddNoteInput
+import com.example.readtracker.android.domain.entity.tag.AddTagInput
+import com.example.readtracker.android.domain.entity.note.Note
+import com.example.readtracker.android.domain.entity.tag.Tag
+import com.example.readtracker.android.domain.entity.note.toNote
 import com.example.readtracker.android.domain.model.NoteDao
 import com.example.readtracker.android.domain.model.TagDao
 import com.example.readtracker.android.domain.repository.NotesRepository

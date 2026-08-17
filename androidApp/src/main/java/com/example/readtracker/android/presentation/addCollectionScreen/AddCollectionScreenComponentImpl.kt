@@ -5,7 +5,7 @@ import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
-import com.example.readtracker.android.domain.entity.AddCollectionInput
+import com.example.readtracker.android.domain.entity.bookCollection.AddCollectionInput
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -39,8 +39,8 @@ class AddCollectionScreenComponentImpl @AssistedInject constructor(
                     launch {
                         store.labels.collect { label ->
                             when (label) {
-                                is AddCollectionScreenStore.Label.ClickSave -> onSaveClicked()
-                                is AddCollectionScreenStore.Label.ClickAddBooks -> onAddBooksClicked()
+                                AddCollectionScreenStore.Label.ClickSave -> onSaveClicked()
+                                AddCollectionScreenStore.Label.ClickAddBooks -> onAddBooksClicked()
                             }
                         }
                     }

@@ -5,10 +5,10 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
-import com.example.readtracker.android.domain.entity.NoteEntity
-import com.example.readtracker.android.domain.entity.NoteTagCrossRef
-import com.example.readtracker.android.domain.entity.NoteWithTagsEntity
-import com.example.readtracker.android.domain.entity.TagEntity
+import com.example.readtracker.android.domain.entity.note.NoteEntity
+import com.example.readtracker.android.domain.entity.note.NoteTagCrossRef
+import com.example.readtracker.android.domain.entity.note.NoteWithTagsEntity
+import com.example.readtracker.android.domain.entity.tag.TagEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

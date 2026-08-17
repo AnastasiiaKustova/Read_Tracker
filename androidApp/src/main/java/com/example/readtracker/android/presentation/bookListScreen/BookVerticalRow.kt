@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
-import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.book.Book
 import com.example.readtracker.android.domain.entity.BookStatus
 import kotlin.math.round
 

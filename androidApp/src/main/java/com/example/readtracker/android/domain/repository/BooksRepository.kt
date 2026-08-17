@@ -1,9 +1,9 @@
 package com.example.readtracker.android.domain.repository
 
-import com.example.readtracker.android.domain.entity.AddBookInput
-import com.example.readtracker.android.domain.entity.AddCollectionInput
-import com.example.readtracker.android.domain.entity.Book
-import com.example.readtracker.android.domain.entity.BookCollection
+import com.example.readtracker.android.domain.entity.book.AddBookInput
+import com.example.readtracker.android.domain.entity.bookCollection.AddCollectionInput
+import com.example.readtracker.android.domain.entity.book.Book
+import com.example.readtracker.android.domain.entity.bookCollection.BookCollection
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.MainScreenItem
 import kotlinx.coroutines.flow.Flow

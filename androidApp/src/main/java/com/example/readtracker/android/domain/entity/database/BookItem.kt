@@ -1,4 +1,4 @@
-package com.example.readtracker.android.domain.entity
+package com.example.readtracker.android.domain.entity.database
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize

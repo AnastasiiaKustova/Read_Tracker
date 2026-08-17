@@ -1,11 +1,16 @@
-package com.example.readtracker.android.domain.entity
+package com.example.readtracker.android.domain.entity.book
+
+import android.net.Uri
+import com.example.readtracker.android.domain.entity.BookStatus
 
 data class AddBookInput(
     override val title: String,
     override val author: String,
     override val description: String,
     override val totalPages: Int,
-    override val coverUri: android.net.Uri?
+    override val coverUri: Uri?,
+    override val series: String,
+    override val idLitres: Long?,
 ) : BookFields
 
 fun AddBookInput.toBook(id: String, status: BookStatus = BookStatus.READING): Book {
@@ -16,6 +21,8 @@ fun AddBookInput.toBook(id: String, status: BookStatus = BookStatus.READING): Bo
         description = this.description,
         totalPages = this.totalPages,
         coverUri = this.coverUri,
+        series = this.series,
+        idLitres = this.idLitres,
         currentPage = 0,
         quotesCount = 0,
         bookStatus = status

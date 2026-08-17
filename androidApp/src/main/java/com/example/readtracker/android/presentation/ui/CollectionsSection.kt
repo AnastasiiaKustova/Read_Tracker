@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.readtracker.android.domain.entity.BookCollection
+import com.example.readtracker.android.domain.entity.bookCollection.BookCollection
 
 @Composable
 fun CollectionsSection(

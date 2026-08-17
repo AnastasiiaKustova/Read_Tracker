@@ -1,4 +1,4 @@
-package com.example.readtracker.android.domain.entity
+package com.example.readtracker.android.domain.entity.bookCollection
 
 import androidx.room.Entity
 import androidx.room.Index

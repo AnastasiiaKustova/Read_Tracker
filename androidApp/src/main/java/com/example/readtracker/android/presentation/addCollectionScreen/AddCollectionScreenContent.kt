@@ -40,8 +40,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.readtracker.android.domain.entity.AddCollectionInput
-import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.bookCollection.AddCollectionInput
+import com.example.readtracker.android.domain.entity.book.Book
 import com.example.readtracker.android.presentation.common.CommonError
 import com.example.readtracker.android.presentation.common.CommonInitial
 import com.example.readtracker.android.presentation.common.CommonLoading

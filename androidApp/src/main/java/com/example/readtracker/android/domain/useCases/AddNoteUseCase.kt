@@ -1,6 +1,6 @@
 package com.example.readtracker.android.domain.useCases
 
-import com.example.readtracker.android.domain.entity.AddNoteInput
+import com.example.readtracker.android.domain.entity.note.AddNoteInput
 import com.example.readtracker.android.domain.repository.NotesRepository
 import javax.inject.Inject
 

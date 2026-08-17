@@ -17,7 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.readtracker.android.domain.entity.Tag
+import com.example.readtracker.android.domain.entity.tag.Tag
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

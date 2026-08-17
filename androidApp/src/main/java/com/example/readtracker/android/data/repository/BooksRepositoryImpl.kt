@@ -1,21 +1,20 @@
 package com.example.readtracker.android.data.repository
 
-import android.net.Uri
 import com.example.readtracker.android.data.local.CoverStorage
 import com.example.readtracker.android.data.mapper.toDomain
 import com.example.readtracker.android.data.mapper.toDomainSet
 import com.example.readtracker.android.data.mapper.toEntity
 import com.example.readtracker.android.data.mapper.toEntityList
-import com.example.readtracker.android.domain.entity.AddBookInput
-import com.example.readtracker.android.domain.entity.AddCollectionInput
-import com.example.readtracker.android.domain.entity.Book
-import com.example.readtracker.android.domain.entity.BookCollection
-import com.example.readtracker.android.domain.entity.BookEntity
+import com.example.readtracker.android.domain.entity.book.AddBookInput
+import com.example.readtracker.android.domain.entity.bookCollection.AddCollectionInput
+import com.example.readtracker.android.domain.entity.book.Book
+import com.example.readtracker.android.domain.entity.bookCollection.BookCollection
+import com.example.readtracker.android.domain.entity.book.BookEntity
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.MainScreenItem
 import com.example.readtracker.android.domain.entity.MainScreenItem.Companion.default
-import com.example.readtracker.android.domain.entity.toBook
-import com.example.readtracker.android.domain.entity.toBookCollection
+import com.example.readtracker.android.domain.entity.book.toBook
+import com.example.readtracker.android.domain.entity.bookCollection.toBookCollection
 import com.example.readtracker.android.domain.model.BookDao
 import com.example.readtracker.android.domain.model.CollectionDao
 import com.example.readtracker.android.domain.repository.BooksRepository
@@ -44,13 +43,25 @@ class BooksRepositoryImpl @Inject constructor(
 
     override suspend fun addBook(addBookInput: AddBookInput) {
         val generatedId = java.util.UUID.randomUUID().toString()
-        val internalCoverUri = coverStorage.saveCoverToInternalStorage(addBookInput.coverUri, generatedId)
+        val sourceUri = addBookInput.coverUri
+        val internalCoverUri = if (sourceUri != null && (sourceUri.scheme == "http" || sourceUri.scheme == "https")) {
+            sourceUri
+        } else {
+            coverStorage.saveCoverToInternalStorage(sourceUri, generatedId)
+        }
         val finalBook = addBookInput.toBook(generatedId).copy(coverUri = internalCoverUri)
         bookDao.insertBook(finalBook.toEntity())
     }
 
     override suspend fun updateBook(updatedBook: Book){
-        bookDao.insertBook(updatedBook.toEntity())
+        val sourceUri = updatedBook.coverUri
+        val internalCoverUri = if (sourceUri != null && (sourceUri.scheme == "http" || sourceUri.scheme == "https")) {
+            sourceUri
+        } else {
+            coverStorage.saveCoverToInternalStorage(sourceUri, updatedBook.id)
+        }
+        val finalBook = updatedBook.copy(coverUri = internalCoverUri)
+        bookDao.insertBook(finalBook.toEntity())
     }
 
 

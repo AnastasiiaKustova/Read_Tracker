@@ -5,16 +5,18 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
-import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.book.Book
 import com.example.readtracker.android.domain.entity.BookDetail
 import com.example.readtracker.android.domain.entity.BookDetailMode
-import com.example.readtracker.android.domain.entity.BookItem
+import com.example.readtracker.android.domain.entity.database.BookItem
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.useCases.GetBookByIdUseCase
+import com.example.readtracker.android.domain.useCases.SearchCategoriesUseCase
 import com.example.readtracker.android.domain.useCases.UpdateBookUseCase
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.Intent
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.Label
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.State
+import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStoreFactory.Msg.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -22,8 +24,9 @@ import javax.inject.Inject
 
 interface BookDetailScreenStore : Store<Intent, State, Label> {
     sealed interface Intent {
-        data object ClickEditBook : Intent
+        data class ClickEditBook(val book: Book)  : Intent
         data class ClickChangeStatus(val newStatus: BookStatus) : Intent
+        data class ClickChoose(val bookItem: BookItem) : Intent
         data class ClickUpdatePage(val newPage: Int) : Intent
     }
 
@@ -45,16 +48,16 @@ interface BookDetailScreenStore : Store<Intent, State, Label> {
     }
 
     sealed interface Label {
-        data object ClickEditBook : Label
-        data object ClickChangeStatus : Label
-        data object ClickUpdatePage : Label
+        data class ClickEditBook(val book: Book) : Label
+        data class ClickChoose(val bookItem: BookItem) : Label
     }
 }
 
 class BookDetailScreenStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
     private val getBookByIdUseCase: GetBookByIdUseCase,
-    private val updateBookUseCase: UpdateBookUseCase
+    private val updateBookUseCase: UpdateBookUseCase,
+    private val searchCategoriesUseCase: SearchCategoriesUseCase
 ) {
     fun create(bookId: String?, bookItem: BookItem?, mode: BookDetailMode): BookDetailScreenStore =
         object : BookDetailScreenStore, Store<Intent, State, Label> by storeFactory.create(
@@ -99,13 +102,18 @@ class BookDetailScreenStoreFactory @Inject constructor(
                             BookDetail(
                                 book = book,
                                 bookItem = null,
+                                categories = emptyList(),
                                 mode = mode
                             )
                         }
                         BookDetailMode.SEARCH -> {
+                            if (bookItem == null) {throw Exception("Error") }
+                            val categories = if (bookItem.genresList != null) { searchCategoriesUseCase(bookItem.genresList) } else { emptyList() }
+
                             BookDetail(
                                 book = null,
                                 bookItem = bookItem,
+                                categories = categories,
                                 mode = mode
                             )
                         }
@@ -132,7 +140,7 @@ class BookDetailScreenStoreFactory @Inject constructor(
     private inner class ExecutorImpl : CoroutineExecutor<Intent, Action, State, Msg, Label>() {
         override fun executeIntent(intent: Intent) {
             when (intent) {
-                Intent.ClickEditBook -> publish(Label.ClickEditBook)
+                is Intent.ClickEditBook -> publish(Label.ClickEditBook(intent.book))
                 is Intent.ClickChangeStatus -> {
                     scope.launch {
                         val currentScreenState = state().screenState
@@ -157,7 +165,7 @@ class BookDetailScreenStoreFactory @Inject constructor(
                                     updateBookUseCase(updatedBook)
                                 }
 
-                                dispatch(Msg.ScreenLoaded(bookDetail = bookDetail.copy(book = updatedBook)))
+                                dispatch(ScreenLoaded(bookDetail = bookDetail.copy(book = updatedBook)))
 
                             } catch (e: Exception) {
                                 dispatch(Msg.ScreenError)
@@ -192,7 +200,7 @@ class BookDetailScreenStoreFactory @Inject constructor(
                                     updateBookUseCase(updatedBook)
                                 }
 
-                                dispatch(Msg.ScreenLoaded(bookDetail = bookDetail.copy(book = updatedBook)))
+                                dispatch(ScreenLoaded(bookDetail = bookDetail.copy(book = updatedBook)))
 
                             } catch (e: Exception) {
                                 dispatch(Msg.ScreenError)
@@ -200,6 +208,8 @@ class BookDetailScreenStoreFactory @Inject constructor(
                         }
                     }
                 }
+
+                is Intent.ClickChoose -> publish(Label.ClickChoose(intent.bookItem))
             }
         }
 

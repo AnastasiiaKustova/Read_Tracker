@@ -5,38 +5,35 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
-import com.example.readtracker.android.domain.entity.BookItem
-import com.example.readtracker.android.domain.entity.BookListMode
-import com.example.readtracker.android.domain.entity.BookStatus
-import com.example.readtracker.android.domain.useCases.GetBooksUseCase
-import com.example.readtracker.android.domain.useCases.GetCollectionByIdUseCase
+import com.example.readtracker.android.domain.entity.database.BookItem
+import com.example.readtracker.android.domain.useCases.SearchBooksUseCase
 import com.example.readtracker.android.presentation.searchBookScreen.SearchBookScreenStore.Intent
 import com.example.readtracker.android.presentation.searchBookScreen.SearchBookScreenStore.Label
 import com.example.readtracker.android.presentation.searchBookScreen.SearchBookScreenStore.Label.*
 import com.example.readtracker.android.presentation.searchBookScreen.SearchBookScreenStore.State
+import com.example.readtracker.android.presentation.searchBookScreen.SearchBookScreenStore.State.ScreenState.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 interface SearchBookScreenStore : Store<Intent, State, Label> {
     sealed interface Intent {
         data class ClickBook(val bookItem: BookItem) : Intent
         data object ClickBack : Intent
+        data class ChangeQuery(val query: String) : Intent
     }
 
     data class State(
-        val screenState: ScreenState
+        val searchQuery: String = "",
+        val isLoading: Boolean = false,
+        val screenState: ScreenState = Initial
     ) {
         sealed interface ScreenState {
-
             data object Initial : ScreenState
-
-            data object Loading : ScreenState
-
             data object Error : ScreenState
-
-            data class Loaded(
-                val books: Set<BookItem>,
-            ) : ScreenState
+            data class Loaded(val books: Set<BookItem>) : ScreenState
         }
     }
 
@@ -48,6 +45,7 @@ interface SearchBookScreenStore : Store<Intent, State, Label> {
 
 class SearchBookScreenStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
+    private val searchBooksUseCase: SearchBooksUseCase
 ) {
     fun create(): SearchBookScreenStore =
         object : SearchBookScreenStore, Store<Intent, State, Label> by storeFactory.create(
@@ -72,6 +70,8 @@ class SearchBookScreenStoreFactory @Inject constructor(
 
         data class ScreenLoaded(val books: Set<BookItem>) : Msg
 
+        data class QueryChanged(val query: String) : Msg
+
         data object ScreenLoading : Msg
 
         data object ScreenError : Msg
@@ -94,18 +94,55 @@ class SearchBookScreenStoreFactory @Inject constructor(
     private object ReducerImpl : Reducer<State, Msg> {
         override fun State.reduce(msg: Msg): State {
             return when (msg) {
-                Msg.ScreenError -> copy(screenState = State.ScreenState.Error)
-                Msg.ScreenLoading -> copy(screenState = State.ScreenState.Loading)
-                is Msg.ScreenLoaded -> copy(screenState = State.ScreenState.Loaded(msg.books))
+                Msg.ScreenError -> copy(
+                    isLoading = false,
+                    screenState = Error
+                )
+                Msg.ScreenLoading -> copy(
+                    isLoading = true
+                )
+                is Msg.ScreenLoaded -> copy(
+                    isLoading = false,
+                    screenState = Loaded(books = msg.books)
+                )
+                is Msg.QueryChanged -> copy(
+                    searchQuery = msg.query,
+                    isLoading = msg.query.isNotBlank(),
+                    screenState = if (msg.query.isBlank()) Initial else screenState
+                )
             }
         }
     }
 
     private inner class ExecutorImpl : CoroutineExecutor<Intent, Action, State, Msg, Label>() {
+
+        private var searchJob: Job? = null
+
         override fun executeIntent(intent: Intent) {
             when (intent) {
                 Intent.ClickBack -> publish(ClickBack)
                 is Intent.ClickBook -> publish(ClickBook(intent.bookItem))
+                is Intent.ChangeQuery -> {
+                    // 1. Сразу сохраняем введенный текст в стейт через Редюсер, чтобы буквы на экране не тормозили
+                    dispatch(Msg.QueryChanged(intent.query))
+
+                    // 2. Отменяем предыдущий фоновый запрос поиска, если пользователь продолжает быстро писать
+                    searchJob?.cancel()
+
+                    // 3. Запускаем новый ленивый поиск с De-bounce задержкой
+                    searchJob = scope.launch {
+                        if (intent.query.isNotBlank()) {
+                            dispatch(Msg.ScreenLoading) // Включаем лоадер
+                            delay(500.milliseconds) // Ждем 500 мс. Если пользователь нажмет еще букву, корутина отменится на этой строке!
+
+                            // Вызываем наш UseCase каталога
+                            val foundBooks = searchBooksUseCase(intent.query)
+                            dispatch(Msg.ScreenLoaded(books = foundBooks))
+                        } else {
+                            dispatch(Msg.ScreenLoaded(books = emptySet()))
+                        }
+                    }
+                }
             }
         }
         override fun executeAction(action: Action) {

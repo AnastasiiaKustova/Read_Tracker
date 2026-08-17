@@ -7,10 +7,12 @@ import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.popTo
+import com.arkivanov.decompose.router.stack.popWhile
 import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.value.Value
+import com.example.readtracker.android.domain.entity.book.Book
 import com.example.readtracker.android.domain.entity.BookDetailMode
-import com.example.readtracker.android.domain.entity.BookItem
+import com.example.readtracker.android.domain.entity.database.BookItem
 import com.example.readtracker.android.domain.entity.BookListMode
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.BottomTab
@@ -84,16 +86,30 @@ class RootComponentImpl @AssistedInject constructor(
 
     // 4. ИСПРАВЛЕНИЕ: Пушим правильный объект навигации деталей книги
     override fun onBookClicked(bookId: String) {
-        Log.d("APP_DEBUG", "4. ROOT_NAV: Метод onBookClicked($bookId) выполнен. Делаем navigation.push().")
-        navigation.push(RootComponent.Configuration.BookDetail(bookId = bookId, mode = BookDetailMode.VIEW))
+        Log.d(
+            "APP_DEBUG",
+            "4. ROOT_NAV: Метод onBookClicked($bookId) выполнен. Делаем navigation.push()."
+        )
+        navigation.push(
+            RootComponent.Configuration.BookDetail(
+                bookId = bookId,
+                mode = BookDetailMode.VIEW
+            )
+        )
     }
 
-    override fun onBookClicked(bookItem: BookItem) {
-        navigation.push(RootComponent.Configuration.BookDetail(bookItem = bookItem, mode = BookDetailMode.SEARCH))
+    override fun onBookClicked(bookItem: BookItem, onChooseClicked: (BookItem) -> Unit) {
+        navigation.push(
+            RootComponent.Configuration.BookDetail(
+                bookItem = bookItem,
+                mode = BookDetailMode.SEARCH,
+                onChooseClicked = onChooseClicked
+            )
+        )
     }
 
-    override fun onAddBookClicked() {
-        navigation.push(RootComponent.Configuration.AddBook)
+    override fun onAddBookClicked(book: Book?) {
+        navigation.push(RootComponent.Configuration.AddBook(book))
     }
 
     override fun onAddNoteClicked() {
@@ -108,25 +124,27 @@ class RootComponentImpl @AssistedInject constructor(
         navigation.push(RootComponent.Configuration.NoteDetail(noteId))
     }
 
-    override fun onSearchLitresClicked() {
-        navigation.push(RootComponent.Configuration.SearchBook)
+    override fun onSearchLitresClicked(onChooseClicked: (BookItem) -> Unit) {
+        navigation.push(RootComponent.Configuration.SearchBook(onChooseClicked))
     }
 
-    override fun onCollectionClick(collectionId: String, openMode: BookListMode){
+    override fun openBookListByCollectionIdClick(collectionId: String, openMode: BookListMode) {
         navigation.push(RootComponent.Configuration.BookList(collectionId, null, openMode))
     }
 
-    override fun onCollectionClick(bookStatus: BookStatus, openMode: BookListMode){
+    override fun openBookListByBookStatusClick(bookStatus: BookStatus, openMode: BookListMode) {
         navigation.push(RootComponent.Configuration.BookList(null, bookStatus, openMode))
     }
 
-    override fun onCollectionClick(openMode: BookListMode, onResult: ((Set<String>) -> Unit)? ){
-        navigation.push(RootComponent.Configuration.BookList(
-            null,
-            null,
-            openMode,
-            onResult = onResult
-        ))
+    override fun openBookListClick(openMode: BookListMode, onResult: ((Set<String>) -> Unit)?) {
+        navigation.push(
+            RootComponent.Configuration.BookList(
+                null,
+                null,
+                openMode,
+                onResult = onResult
+            )
+        )
     }
 
     // 5. ИСПРАВЛЕНИЕ: Фабрика создания экранов теперь принимает RootComponent.Configuration
@@ -139,38 +157,49 @@ class RootComponentImpl @AssistedInject constructor(
             RootComponent.Configuration.MainScreen -> {
                 val component = mainScreenComponentImplFactory.create(
                     onAddBookClicked = {
-                        onAddBookClicked() },
-                    onBookClicked = { bookId ->
-                        Log.d("APP_DEBUG", "6. ROOT_NAV: Успешно создаем Child.BookDetail для ID = ${bookId}")
-                        onBookClicked(bookId) },
-                    onBookStatusClicked = { collectionId ->
-                        onCollectionClick(collectionId, BookListMode.VIEW)
+                        onAddBookClicked()
                     },
-                    onCollectionClicked = { bookStatus ->
-                        onCollectionClick(bookStatus, BookListMode.VIEW)
+                    onBookClicked = { bookId ->
+                        Log.d(
+                            "APP_DEBUG",
+                            "6. ROOT_NAV: Успешно создаем Child.BookDetail для ID = ${bookId}"
+                        )
+                        onBookClicked(bookId)
+                    },
+                    openBookListByCollectionIdClicked = { collectionId ->
+                        openBookListByCollectionIdClick(collectionId, BookListMode.VIEW)
+                    },
+                    openBookListByBookStatusClicked = { bookStatus ->
+                        openBookListByBookStatusClick(bookStatus, BookListMode.VIEW)
                     },
                     onAddCollectionClicked = {
-                        onAddCollectionClicked() },
+                        onAddCollectionClicked()
+                    },
                     componentContext = componentContext
                 )
                 MainScreen(component)
             }
+
             RootComponent.Configuration.Notes -> {
                 val component = noteScreenComponentImplFactory.create(
                     onAddNoteClicked = {
-                        onAddNoteClicked() },
+                        onAddNoteClicked()
+                    },
                     onNoteClicked = { noteId ->
-                        onNoteClicked(noteId) },
+                        onNoteClicked(noteId)
+                    },
                     componentContext = componentContext
                 )
                 NoteScreen(component)
             }
+
             RootComponent.Configuration.Stats -> {
                 val component = statsScreenComponentImplFactory.create(
                     componentContext = componentContext
                 )
                 StatsScreen(component)
             }
+
             RootComponent.Configuration.Profile -> {
                 val component = profileScreenComponentImplFactory.create(
                     componentContext = componentContext
@@ -183,9 +212,15 @@ class RootComponentImpl @AssistedInject constructor(
                     bookId = config.bookId,
                     bookItem = config.bookItem,
                     mode = config.mode,
-                    onEditBookClicked = {},
-                    onUpdatePageClicked = {},
-                    onChangeStatusClicked = {},
+                    onEditBookClicked = { book -> onAddBookClicked(book) },
+                    onChooseClicked = { chosenBook ->
+                        // 1. Стреляем результатом в самый первый экран!
+                        config.onChooseClicked?.invoke(chosenBook)
+
+                        // 2. Очищаем навигационный стек, закрывая Экран 3 и Экран 2 разом,
+                        // чтобы пользователь мгновенно оказался на Экране 1 (Добавление книги)
+                        navigation.popWhile { it is RootComponent.Configuration.SearchBook || it is RootComponent.Configuration.BookDetail }
+                    },
                     componentContext = componentContext
                 )
                 BookDetail(component)
@@ -211,7 +246,11 @@ class RootComponentImpl @AssistedInject constructor(
                         navigation.pop()
                     },
                     onBookClicked = { bookId ->
-                        onBookClicked(bookId)
+                        if (config.openMode == BookListMode.SINGLE_SELECT) {
+                            config.onResult?.invoke(setOf(bookId))
+                            navigation.pop()
+                        } else
+                            onBookClicked(bookId)
                     },
                     onMultiSelectConfirmed = { selectedIds ->
                         config.onResult?.invoke(selectedIds)
@@ -222,39 +261,59 @@ class RootComponentImpl @AssistedInject constructor(
                 BookList(component)
             }
 
-            RootComponent.Configuration.AddBook -> {
-
-                val component = addBookScreenComponentImplFactory.create(
-                    onSearchLitresClicked = { onSearchLitresClicked() },
-                    onSaveBookClicked = { navigation.pop()},
+            is RootComponent.Configuration.AddBook -> {
+                var component: AddBook? = null
+                val createdComponent = addBookScreenComponentImplFactory.create(
+                    book = config.book,
+                    onSearchLitresClicked = {
+                        onSearchLitresClicked(
+                            onChooseClicked = { chosenBook ->
+                                (component?.component as? AddBookScreenComponentImpl)
+                                    ?.onSelectBookFromBaseClicked(chosenBook)
+                            })
+                    },
+                    onSaveBookClicked = { navigation.pop() },
                     componentContext = componentContext
                 )
-                AddBook(component)
+                AddBook(createdComponent).also {
+                    component = it
+                }
             }
 
             is RootComponent.Configuration.AddNote -> {
+                var component: AddNote? = null
+                val createdComponent = addNoteScreenComponentImplFactory.create(
+                    onSaveClicked = { navigation.pop() },
+                    onAddBookClicked = {
+                        openBookListClick(
+                            BookListMode.SINGLE_SELECT,
+                            onResult = { selectedId ->
+                                (component?.component as? AddNoteScreenComponentImpl)
+                                    ?.onBookSelected(selectedId.first())
+                            }
+                        )
 
-                val component = addNoteScreenComponentImplFactory.create(
-                    onSaveClicked = { navigation.pop()},
+                    },
                     componentContext = componentContext
                 )
-                AddNote(component)
+                AddNote(createdComponent).also {
+                    component = it
+                }
             }
 
             RootComponent.Configuration.AddCollection -> {
                 var component: AddCollection? = null
                 val createdComponent = addCollectionScreenComponentImplFactory.create(
-                    onSaveClicked = { navigation.pop()},
-                    onAddBooksClicked = { onCollectionClick(
-                        BookListMode.MULTI_SELECT,
-                        onResult = { selectedIds ->
-                            // 3. Магия: через сохраненную ссылку на компонент мы дотягиваемся
-                            // до его внутреннего метода или стора, который теперь доступен!
-                            // (Код метода onBooksSelected написан на Шаге 3)
-                            (component?.component as? AddCollectionScreenComponentImpl)
-                                ?.onBooksSelected(selectedIds)
-                        }
-                    ) },
+                    onSaveClicked = { navigation.pop() },
+                    onAddBooksClicked = {
+                        openBookListClick(
+                            BookListMode.MULTI_SELECT,
+                            onResult = { selectedIds ->
+                                (component?.component as? AddCollectionScreenComponentImpl)
+                                    ?.onBooksSelected(selectedIds)
+                            }
+                        )
+                    },
                     componentContext = componentContext
                 )
                 AddCollection(createdComponent).also {
@@ -262,10 +321,10 @@ class RootComponentImpl @AssistedInject constructor(
                 }
             }
 
-            RootComponent.Configuration.SearchBook -> {
+            is RootComponent.Configuration.SearchBook -> {
                 val component = searchBookScreenComponentImplFactory.create(
-                    onBookClicked = { bookItem -> onBookClicked(bookItem) },
-                    onBackClicked = { navigation.pop()},
+                    onBookClicked = { bookItem -> onBookClicked(bookItem, config.onBookSelected) },
+                    onBackClicked = { navigation.pop() },
                     componentContext = componentContext
                 )
                 SearchBook(component)

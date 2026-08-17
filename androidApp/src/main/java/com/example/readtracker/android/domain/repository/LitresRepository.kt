@@ -1,7 +1,9 @@
 package com.example.readtracker.android.domain.repository
 
-import com.example.readtracker.android.domain.model.BookDao
+import com.example.readtracker.android.domain.entity.database.BookItem
+import com.example.readtracker.android.domain.entity.database.CategoryItem
 
 interface LitresRepository {
-    suspend fun getPopularBooks(): List<BookDao>
+    suspend fun searchBooks(query: String): Set<BookItem>
+    suspend fun searchCategories(ids: String): List<CategoryItem>
 }

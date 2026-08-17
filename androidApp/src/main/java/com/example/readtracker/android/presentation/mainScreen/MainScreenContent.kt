@@ -21,8 +21,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.readtracker.android.domain.entity.Book
-import com.example.readtracker.android.domain.entity.BookCollection
+import com.example.readtracker.android.domain.entity.book.Book
+import com.example.readtracker.android.domain.entity.bookCollection.BookCollection
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.presentation.common.CommonError
 import com.example.readtracker.android.presentation.common.CommonInitial

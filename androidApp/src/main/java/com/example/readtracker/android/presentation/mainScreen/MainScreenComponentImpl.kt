@@ -23,8 +23,8 @@ class MainScreenComponentImpl @AssistedInject constructor(
     @Assisted("onBookClicked") private val onBookClicked: (String) -> Unit,
     @Assisted("onAddBookClicked") private val onAddBookClicked: () -> Unit,
     @Assisted("onAddCollectionClicked") private val onAddCollectionClicked: () -> Unit,
-    @Assisted("onCollectionClicked") private val onCollectionClicked: (String) -> Unit,
-    @Assisted("onBookStatusClicked") private val onBookStatusClicked: (BookStatus) -> Unit,
+    @Assisted("openBookListByCollectionIdClicked") private val openBookListByCollectionIdClicked: (String) -> Unit,
+    @Assisted("openBookListByBookStatusClicked") private val openBookListByBookStatusClicked: (BookStatus) -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
 ) : MainScreenComponent, ComponentContext by componentContext {
 
@@ -46,8 +46,8 @@ class MainScreenComponentImpl @AssistedInject constructor(
                                 is MainScreenStore.Label.ClickBook -> onBookClicked(label.bookId)
                                 MainScreenStore.Label.ClickAddBook -> onAddBookClicked()
                                 MainScreenStore.Label.ClickAddCollection -> onAddCollectionClicked()
-                                is MainScreenStore.Label.ClickCollection -> onCollectionClicked(label.collectionId)
-                                is MainScreenStore.Label.ClickBookStatus -> onBookStatusClicked(label.bookStatus)
+                                is MainScreenStore.Label.ClickCollection -> openBookListByCollectionIdClicked(label.collectionId)
+                                is MainScreenStore.Label.ClickBookStatus -> openBookListByBookStatusClicked(label.bookStatus)
                             }
                         }
                     }
@@ -89,8 +89,8 @@ class MainScreenComponentImpl @AssistedInject constructor(
             @Assisted("onAddBookClicked") onAddBookClicked: () -> Unit,
             @Assisted("onAddCollectionClicked") onAddCollectionClicked: () -> Unit,
             @Assisted("onBookClicked") onBookClicked: (String) -> Unit,
-            @Assisted("onCollectionClicked") onCollectionClicked: (String) -> Unit,
-            @Assisted("onBookStatusClicked") onBookStatusClicked: (BookStatus) -> Unit,
+            @Assisted("openBookListByCollectionIdClicked") openBookListByCollectionIdClicked: (String) -> Unit,
+            @Assisted("openBookListByBookStatusClicked") openBookListByBookStatusClicked: (BookStatus) -> Unit,
             @Assisted("componentContext") componentContext: ComponentContext,
         ): MainScreenComponentImpl
     }

@@ -5,7 +5,7 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
-import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.book.Book
 import com.example.readtracker.android.domain.entity.BookListMode
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.useCases.GetBooksUseCase
