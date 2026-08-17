@@ -5,8 +5,7 @@ import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
-import com.example.readtracker.android.domain.entity.AddNoteInput
-import com.example.readtracker.android.domain.entity.Tag
+import com.example.readtracker.android.domain.entity.note.AddNoteInput
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -21,6 +20,7 @@ import kotlinx.coroutines.launch
 class AddNoteScreenComponentImpl @AssistedInject constructor(
     private val storeFactory: AddNoteScreenStoreFactory,
     @Assisted("onSaveClicked") private val onSaveClicked: () -> Unit,
+    @Assisted("onAddBookClicked") private val onAddBookClicked: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
 ) : AddNoteScreenComponent, ComponentContext by componentContext {
 
@@ -40,6 +40,7 @@ class AddNoteScreenComponentImpl @AssistedInject constructor(
                         store.labels.collect { label ->
                             when (label) {
                                 is AddNoteScreenStore.Label.ClickSave -> onSaveClicked()
+                                AddNoteScreenStore.Label.ClickSelectBook -> onAddBookClicked()
                             }
                         }
                     }
@@ -58,11 +59,20 @@ class AddNoteScreenComponentImpl @AssistedInject constructor(
         store.accept(AddNoteScreenStore.Intent.ClickSave(addNoteInput))
     }
 
+    override fun onBookSelected(bookId: String) {
+        store.accept(AddNoteScreenStore.Intent.UpdateSelectedBook(bookId))
+    }
+
+    override fun onBookSelectClick() {
+        store.accept(AddNoteScreenStore.Intent.ClickSelectBook)
+    }
+
 
     @AssistedFactory
     interface Factory{
         fun create(
             @Assisted("onSaveClicked") onSaveClicked: () -> Unit,
+            @Assisted("onAddBookClicked") onAddBookClicked: () -> Unit,
             @Assisted("componentContext") componentContext: ComponentContext,
         ): AddNoteScreenComponentImpl
     }

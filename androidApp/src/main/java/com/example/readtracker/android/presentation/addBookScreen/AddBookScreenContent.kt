@@ -30,6 +30,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,38 +40,76 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.example.readtracker.android.domain.entity.AddBookInput
+import coil3.request.ImageRequest
+import com.example.readtracker.android.domain.entity.book.AddBookInput
+import com.example.readtracker.android.domain.entity.book.Book
+import com.example.readtracker.android.domain.entity.database.BookItem
 import com.example.readtracker.android.presentation.common.CustomInputField
 
 @Composable
 fun AddBookScreenContent(component: AddBookScreenComponent) {
+    val state by component.model.collectAsState()
+
     AddBookScreen(
+        selectedBook = state.loadedBook,
+        bookForUpdate = state.bookForUpdate,
         onSearchLitresClick = { component.onSearchLitresClick() },
         onSaveBookClick = { addBookInput: AddBookInput ->
-            component.onSaveBookClick(addBookInput) },
+            component.onSaveBookClick(addBookInput)
+        },
+        onUpdateBookClick = { book: Book ->
+            component.onUpdateBookClick(book)
+        },
     )
 }
 
 @Composable
 fun AddBookScreen(
+    selectedBook: BookItem?,
+    bookForUpdate: Book?,
     onSearchLitresClick: () -> Unit,       // Переход на экран поиска ЛитРес
     onSaveBookClick: (addBookInput: AddBookInput) -> Unit,
+    onUpdateBookClick: (book: Book) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
+    val isUpdate = bookForUpdate != null
 
     // Состояния для хранения введенных пользователем данных
-    var titleText by remember { mutableStateOf("") }
-    var authorText by remember { mutableStateOf("") }
-    var pagesText by remember { mutableStateOf("") }
-    var descriptionText by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var titleText by remember {
+        mutableStateOf(
+            if (isUpdate) bookForUpdate.title else selectedBook?.title ?: ""
+        )
+    }
+    var authorText by remember {
+        mutableStateOf(
+            if (isUpdate) bookForUpdate.author else selectedBook?.author ?: ""
+        )
+    }
+    var seriesText by remember {
+        mutableStateOf(
+            if (isUpdate) bookForUpdate.series else selectedBook?.series ?: ""
+        )
+    }
+    var pagesText by remember { mutableStateOf(if (isUpdate) bookForUpdate.totalPages.toString() else "") }
+    var descriptionText by remember {
+        mutableStateOf(
+            if (isUpdate) bookForUpdate.description else selectedBook?.description ?: ""
+        )
+    }
+    var selectedImageUri by remember {
+        mutableStateOf<Uri?>(if (isUpdate) bookForUpdate.coverUri else selectedBook?.picture?.let {
+            Uri.parse(
+                it
+            )
+        })
+    }
 
     // Лаунчер для открытия системной галереи смартфона
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -86,36 +125,38 @@ fun AddBookScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- 1. КНОПКА ПОИСКА В ЛИТРЕС ---
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFF007AFF)) // Акцентный синий цвет
-                .clickable { onSearchLitresClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+        if (!isUpdate) {
+            // --- 1. КНОПКА ПОИСКА В ЛИТРЕС ---
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFF007AFF)) // Акцентный синий цвет
+                    .clickable { onSearchLitresClick() },
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = "Найти в ЛитРес",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "Найти в ЛитРес",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(28.dp))
+        }
 
         // --- 2. ЗАГРУЗКА ОБЛОЖКИ ИЗ ГАЛЕРЕИ ---
         Box(
@@ -174,6 +215,12 @@ fun AddBookScreen(
                 label = "Автор"
             )
 
+            CustomInputField(
+                value = seriesText,
+                onValueChange = { seriesText = it },
+                label = "Серия"
+            )
+
             // Количество страниц
             CustomInputField(
                 value = pagesText,
@@ -208,19 +255,34 @@ fun AddBookScreen(
         Spacer(modifier = Modifier.height(36.dp))
 
         // --- 4. КНОПКА СОХРАНЕНИЯ КНИГИ ---
-        val isFormValid = titleText.isNotEmpty() && authorText.isNotEmpty() && pagesText.isNotEmpty()
+        val isFormValid =
+            titleText.isNotEmpty() && authorText.isNotEmpty() && pagesText.isNotEmpty()
 
         Button(
             onClick = {
                 val pagesCount = pagesText.toIntOrNull() ?: 0
-                onSaveBookClick(
-                    AddBookInput(
+                if (isUpdate) {
+                    val updatedBook = bookForUpdate.copy(
                         title = titleText,
                         author = authorText,
                         totalPages = pagesCount,
                         description = descriptionText,
-                        coverUri = selectedImageUri)
-                )
+                        coverUri = selectedImageUri
+                    )
+                    onUpdateBookClick(updatedBook)
+                } else {
+                    onSaveBookClick(
+                        AddBookInput(
+                            title = titleText,
+                            author = authorText,
+                            totalPages = pagesCount,
+                            description = descriptionText,
+                            series = seriesText,
+                            idLitres = selectedBook?.id,
+                            coverUri = selectedImageUri
+                        )
+                    )
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -229,7 +291,11 @@ fun AddBookScreen(
             colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
             enabled = isFormValid // Кнопка активна, только если заполнены ключевые поля
         ) {
-            Text(text = "Добавить книгу", fontSize = 16.sp, color = Color.White)
+            Text(
+                text = if (isUpdate) "Обновить книгу" else "Добавить книгу",
+                fontSize = 16.sp,
+                color = Color.White
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))

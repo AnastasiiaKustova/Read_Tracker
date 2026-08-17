@@ -1,4 +1,6 @@
-package com.example.readtracker.android.domain.entity
+package com.example.readtracker.android.domain.entity.bookCollection
+
+import com.example.readtracker.android.domain.entity.book.Book
 
 data class AddCollectionInput(
     override val title: String,

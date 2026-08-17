@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.example.readtracker.android.domain.entity.TagEntity
+import com.example.readtracker.android.domain.entity.tag.TagEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

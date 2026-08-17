@@ -1,4 +1,4 @@
-package com.example.readtracker.android.domain.entity
+package com.example.readtracker.android.domain.entity.tag
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

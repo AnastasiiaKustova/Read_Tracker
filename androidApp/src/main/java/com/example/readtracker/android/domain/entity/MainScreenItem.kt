@@ -1,7 +1,7 @@
 package com.example.readtracker.android.domain.entity
 
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
+import com.example.readtracker.android.domain.entity.book.Book
+import com.example.readtracker.android.domain.entity.bookCollection.BookCollection
 
 
 data class MainScreenItem (

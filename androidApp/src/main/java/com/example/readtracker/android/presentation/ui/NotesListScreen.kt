@@ -8,8 +8,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.readtracker.android.domain.entity.Note
-import com.example.readtracker.android.domain.entity.Tag
+import com.example.readtracker.android.domain.entity.note.Note
+import com.example.readtracker.android.domain.entity.tag.Tag
 
 @Composable
 fun NotesListScreen(

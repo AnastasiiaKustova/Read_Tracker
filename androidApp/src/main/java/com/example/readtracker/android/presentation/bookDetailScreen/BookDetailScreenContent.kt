@@ -1,7 +1,5 @@
 package com.example.readtracker.android.presentation.bookDetailScreen
 
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,9 +18,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -46,16 +47,20 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import com.example.readtracker.android.core.formatWithSpace
-import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.book.Book
+import com.example.readtracker.android.domain.entity.BookDetailMode
+import com.example.readtracker.android.domain.entity.database.BookItem
 import com.example.readtracker.android.domain.entity.BookStatus
+import com.example.readtracker.android.domain.entity.database.CategoryItem
 import com.example.readtracker.android.presentation.common.CommonError
 import com.example.readtracker.android.presentation.common.CommonInitial
 import com.example.readtracker.android.presentation.common.CommonLoading
-import com.example.readtracker.android.presentation.noteDetailScreen.NoteDetailScreenStore
 import com.example.readtracker.android.presentation.ui.ChangeStatusDialog
 import com.example.readtracker.android.presentation.ui.StatItem
 import com.example.readtracker.android.presentation.ui.UpdatePageDialog
 import org.chromium.base.Log
+import java.io.File
+import java.net.URI
 import kotlin.math.round
 
 @Composable
@@ -63,18 +68,44 @@ fun BookDetailScreenContent(component: BookDetailScreenComponent) {
 
     val state by component.model.collectAsState()
 
-    Box{
-        when(val screenState = state.screenState){
+    Box {
+        when (val screenState = state.screenState) {
             BookDetailScreenStore.State.ScreenState.Error -> CommonError()
             BookDetailScreenStore.State.ScreenState.Initial -> CommonInitial()
             is BookDetailScreenStore.State.ScreenState.Loaded -> {
-                BookDetailScreen(
-                    book = screenState.book,
-                    onEditBookClick = { component.onEditBookClick() },
-                    onUpdatePageClick = { newPage -> component.onUpdatePageClick(newPage) },
-                    onChangeStatusClick = { newStatus -> component.onChangeStatusClick(newStatus) }
-                )
+                val bookDetail = screenState.bookDetail
+                when (bookDetail.mode) {
+                    BookDetailMode.VIEW -> {
+                        if (bookDetail.book == null) CommonError()
+                        else
+                            BookDetailScreen(
+                                book = bookDetail.book,
+                                categories = bookDetail.categories,
+                                onEditBookClick = { component.onEditBookClick(bookDetail.book) },
+                                onUpdatePageClick = { newPage -> component.onUpdatePageClick(newPage) },
+                                onChangeStatusClick = { newStatus ->
+                                    component.onChangeStatusClick(
+                                        newStatus
+                                    )
+                                }
+                            )
+                    }
+
+                    BookDetailMode.SEARCH -> {
+                        if (bookDetail.bookItem == null) CommonError()
+                        else {
+                            BookDetailScreenLitres(
+                                bookItem = bookDetail.bookItem,
+                                categories = bookDetail.categories,
+                                onBackClick = {},
+                                onConfirmClick = { bookItem -> component.onChooseClick(bookItem) }
+                            )
+                        }
+                    }
+                }
+
             }
+
             BookDetailScreenStore.State.ScreenState.Loading -> CommonLoading()
         }
     }
@@ -83,6 +114,7 @@ fun BookDetailScreenContent(component: BookDetailScreenComponent) {
 @Composable
 fun BookDetailScreen(
     book: Book,
+    categories: List<CategoryItem>,
     onEditBookClick: () -> Unit,       // Лямбда для карандашика редактирования
     onChangeStatusClick: (BookStatus) -> Unit,   // Лямбда для кнопки смены статуса
     onUpdatePageClick: (Int) -> Unit,     // Лямбда для кнопки ввода страницы
@@ -128,7 +160,11 @@ fun BookDetailScreen(
     }
 
     // Внешний Box нужен, чтобы мы могли наложить кнопку редактирования в правый верхний угол
-    Box(modifier = modifier.fillMaxSize().background(Color.White)) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
 
         // Основной скролл-контент
         Column(
@@ -150,11 +186,23 @@ fun BookDetailScreen(
                 contentAlignment = Alignment.Center
             ) {
                 if (book.coverUri != null) {
+                    val lastModified = remember(book.coverUri) {
+                        try {
+                            // Если это локальный файл приложения, берем время его изменения
+                            if (book.coverUri != null && book.coverUri.scheme == "file") {
+                                File(URI(book.coverUri.toString())).lastModified().toString()
+                            } else {
+                                System.currentTimeMillis().toString() // Для сети генерируем свежий ключ
+                            }
+                        } catch (e: Exception) {
+                            ""
+                        }
+                    }
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(book.coverUri)
-                            .memoryCacheKey(book.id) // Жестко привязываем кэш в оперативной памяти к ID книги!
-                            .diskCacheKey(book.id)   // Жестко привязываем кэш на диске к ID книги!
+                            .memoryCacheKey("${book.id}_$lastModified")
+                            .diskCacheKey("${book.id}_$lastModified")
                             .build(),
                         contentDescription = "Обложка книги",
                         modifier = Modifier.fillMaxSize(),
@@ -266,7 +314,12 @@ fun BookDetailScreen(
                             tint = Color.Black,
                             modifier = Modifier.size(18.dp)
                         )
-                        Text(text = "Статус", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+                        Text(
+                            text = "Статус",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Black
+                        )
                     }
                 }
 
@@ -290,7 +343,12 @@ fun BookDetailScreen(
                             tint = Color.Black,
                             modifier = Modifier.size(18.dp)
                         )
-                        Text(text = "Я на странице", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+                        Text(
+                            text = "Я на странице",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Black
+                        )
                     }
                 }
             }
@@ -299,6 +357,22 @@ fun BookDetailScreen(
 
             // 6. Описание книги
             Column(modifier = Modifier.fillMaxWidth()) {
+                if (book.series.isNotEmpty()) {
+                    Text(
+                        text = "Серия",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = book.series,
+                        fontSize = 15.sp,
+                        color = Color.Black,
+                        lineHeight = 22.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 Text(
                     text = "О книге",
                     fontSize = 18.sp,
@@ -343,13 +417,225 @@ fun BookDetailScreen(
     }
 }
 
-
 @Composable
-@Preview
-fun BookDetailScreenTest(){
-    BookDetailScreen(
-        Book.test(),
-        {},
-        {},
-        {})
+fun BookDetailScreenLitres(
+    bookItem: BookItem,
+    categories: List<CategoryItem>,
+    onBackClick: () -> Unit,
+    onConfirmClick: (bookItem: BookItem) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scrollState = rememberScrollState()
+
+    // Внешний Box нужен, чтобы мы могли наложить кнопку редактирования в правый верхний угол
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
+
+        // Основной скролл-контент
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 1. Обложка книги по центру
+            Box(
+                modifier = Modifier
+                    .width(160.dp)
+                    .height(240.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFFB0B3B8)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (bookItem.picture != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(bookItem.picture)
+                            .memoryCacheKey(bookItem.id.toString()) // Уникальный ключ по ID книги
+                            .diskCacheKey(bookItem.id.toString())
+                            .build(),
+                        contentDescription = "Обложка книги",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 2. Название книги
+            Text(
+                text = bookItem.title ?: "",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 3. Автор книги
+            Text(
+                text = bookItem.author ?: "",
+                fontSize = 16.sp,
+                color = Color.DarkGray,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 6. Описание книги
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "О книге",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = bookItem.description ?: "",
+                    fontSize = 15.sp,
+                    color = Color.Black,
+                    lineHeight = 22.sp
+                )
+
+                if (bookItem.series != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Серия",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = bookItem.series,
+                        fontSize = 15.sp,
+                        color = Color.Black,
+                        lineHeight = 22.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Жанры",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = categories.joinToString(separator = ", ") { category ->
+                        category.title // Указываем, какое именно поле брать для склейки
+                    } + " (" + bookItem.genresList + ")",
+                    fontSize = 15.sp,
+                    color = Color.Black,
+                    lineHeight = 22.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Издатель",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = bookItem.publisher ?: "",
+                    fontSize = 15.sp,
+                    color = Color.Black,
+                    lineHeight = 22.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Id",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = bookItem.id.toString(),
+                    fontSize = 15.sp,
+                    color = Color.Black,
+                    lineHeight = 22.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Возраст",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = bookItem.age.toString(),
+                    fontSize = 15.sp,
+                    color = Color.Black,
+                    lineHeight = 22.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Год",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = bookItem.year.toString(),
+                    fontSize = 15.sp,
+                    color = Color.Black,
+                    lineHeight = 22.sp
+                )
+
+                Button(
+                    onClick = {
+                        onConfirmClick(bookItem)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                ) {
+                    Text(text = "Добавить книгу", fontSize = 16.sp, color = Color.White)
+                }
+            }
+
+            // ИСПРАВЛЕНИЕ: Вместо 32.dp ставим большой отступ,
+            // который гарантирует, что текст вытолкнется выше системных кнопок и скрытого меню
+            Spacer(
+                modifier = Modifier
+                    .height(80.dp) // Достаточная высота, чтобы перекрыть габариты таб-бара
+                    .navigationBarsPadding() // Дополнительно учитывает системную полоску жестов Android
+            )
+        }
+
+        // --- КНОПКА РЕДАКТИРОВАНИЯ (Карандашик в верхнем правом углу) ---
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(top = 24.dp, end = 24.dp)
+                .size(40.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .clickable { onBackClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Вернуться назад",
+                tint = Color.Black,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
 }

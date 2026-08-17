@@ -5,10 +5,10 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
-import com.example.readtracker.android.domain.entity.BookCollectionBookCrossRef
-import com.example.readtracker.android.domain.entity.BookCollectionEntity
-import com.example.readtracker.android.domain.entity.BookCollectionWithBooksEntity
-import com.example.readtracker.android.domain.entity.BookEntity
+import com.example.readtracker.android.domain.entity.bookCollection.BookCollectionBookCrossRef
+import com.example.readtracker.android.domain.entity.bookCollection.BookCollectionEntity
+import com.example.readtracker.android.domain.entity.bookCollection.BookCollectionWithBooksEntity
+import com.example.readtracker.android.domain.entity.book.BookEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

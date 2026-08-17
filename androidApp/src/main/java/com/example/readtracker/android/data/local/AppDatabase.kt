@@ -2,12 +2,12 @@ package com.example.readtracker.android.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.example.readtracker.android.domain.entity.BookCollectionBookCrossRef
-import com.example.readtracker.android.domain.entity.BookCollectionEntity
-import com.example.readtracker.android.domain.entity.BookEntity
-import com.example.readtracker.android.domain.entity.NoteEntity
-import com.example.readtracker.android.domain.entity.NoteTagCrossRef
-import com.example.readtracker.android.domain.entity.TagEntity
+import com.example.readtracker.android.domain.entity.bookCollection.BookCollectionBookCrossRef
+import com.example.readtracker.android.domain.entity.bookCollection.BookCollectionEntity
+import com.example.readtracker.android.domain.entity.book.BookEntity
+import com.example.readtracker.android.domain.entity.note.NoteEntity
+import com.example.readtracker.android.domain.entity.note.NoteTagCrossRef
+import com.example.readtracker.android.domain.entity.tag.TagEntity
 import com.example.readtracker.android.domain.model.BookDao
 import com.example.readtracker.android.domain.model.CollectionDao
 import com.example.readtracker.android.domain.model.NoteDao

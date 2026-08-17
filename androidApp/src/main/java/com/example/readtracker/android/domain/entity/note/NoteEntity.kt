@@ -1,9 +1,10 @@
-package com.example.readtracker.android.domain.entity
+package com.example.readtracker.android.domain.entity.note
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.example.readtracker.android.domain.entity.book.BookEntity
 
 @Entity(
     tableName = "notes",

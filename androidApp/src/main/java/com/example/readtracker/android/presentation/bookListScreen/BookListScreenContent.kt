@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.book.Book
 import com.example.readtracker.android.domain.entity.BookListMode
 import com.example.readtracker.android.presentation.common.CommonError
 import com.example.readtracker.android.presentation.common.CommonInitial
@@ -159,17 +159,4 @@ fun BookListScreen(
             }
         }
     }
-}
-
-@Preview
-@Composable
-fun BookListScreenTest(){
-    BookListScreen(
-        title = "Моя коллекция",
-        books = listOf(Book.test()),
-        onBookClick = {},
-        onBackClick = {},
-        mode = BookListMode.MULTI_SELECT,
-        onMultiSelectConfirm = {}
-    )
 }

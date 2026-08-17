@@ -5,7 +5,9 @@ import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
-import com.example.readtracker.android.domain.entity.Book
+import com.example.readtracker.android.domain.entity.book.Book
+import com.example.readtracker.android.domain.entity.BookDetailMode
+import com.example.readtracker.android.domain.entity.database.BookItem
 import com.example.readtracker.android.domain.entity.BookStatus
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -20,14 +22,15 @@ import kotlinx.coroutines.launch
 
 class BookDetailScreenComponentImpl @AssistedInject constructor(
     private val storeFactory: BookDetailScreenStoreFactory,
-    @Assisted("onEditBookClicked") private val onEditBookClicked: () -> Unit,
-    @Assisted("onChangeStatusClicked") private val onChangeStatusClicked: () -> Unit,
-    @Assisted("onUpdatePageClicked") private val onUpdatePageClicked: () -> Unit,
+    @Assisted("onEditBookClicked") private val onEditBookClicked: (book: Book) -> Unit,
+    @Assisted("onChooseClicked") private val onChooseClicked: (bookItem: BookItem) -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
-    @Assisted("bookId") private val bookId: String,
+    @Assisted("bookId") private val bookId: String?,
+    @Assisted("bookItem") private val bookItem: BookItem?,
+    @Assisted("mode") private val mode: BookDetailMode,
 ) : BookDetailScreenComponent, ComponentContext by componentContext {
 
-    private val store = instanceKeeper.getStore { storeFactory.create(bookId) }
+    private val store = instanceKeeper.getStore { storeFactory.create(bookId, bookItem, mode) }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val model: StateFlow<BookDetailScreenStore.State> = store.stateFlow
@@ -42,9 +45,8 @@ class BookDetailScreenComponentImpl @AssistedInject constructor(
                     launch {
                         store.labels.collect { label ->
                             when (label) {
-                                BookDetailScreenStore.Label.ClickEditBook -> onEditBookClicked()
-                                BookDetailScreenStore.Label.ClickChangeStatus -> onChangeStatusClicked()
-                                BookDetailScreenStore.Label.ClickUpdatePage -> onUpdatePageClicked()
+                                is BookDetailScreenStore.Label.ClickEditBook -> onEditBookClicked(label.book)
+                                is BookDetailScreenStore.Label.ClickChoose -> onChooseClicked(label.bookItem)
                             }
                         }
                     }
@@ -61,8 +63,8 @@ class BookDetailScreenComponentImpl @AssistedInject constructor(
 
 
 
-    override fun onEditBookClick() {
-        store.accept(BookDetailScreenStore.Intent.ClickEditBook)
+    override fun onEditBookClick(book: Book) {
+        store.accept(BookDetailScreenStore.Intent.ClickEditBook(book))
     }
 
     override fun onChangeStatusClick(newStatus: BookStatus) {
@@ -73,13 +75,18 @@ class BookDetailScreenComponentImpl @AssistedInject constructor(
         store.accept(BookDetailScreenStore.Intent.ClickUpdatePage(newPage))
     }
 
+    override fun onChooseClick(bookItem: BookItem) {
+        store.accept(BookDetailScreenStore.Intent.ClickChoose(bookItem))
+    }
+
     @AssistedFactory
     interface Factory {
         fun create(
-            @Assisted("bookId") bookId: String,
-            @Assisted("onEditBookClicked") onEditBookClicked: () -> Unit,
-            @Assisted("onChangeStatusClicked") onChangeStatusClicked: () -> Unit,
-            @Assisted("onUpdatePageClicked") onUpdatePageClicked: () -> Unit,
+            @Assisted("bookId") bookId: String?,
+            @Assisted("bookItem") bookItem: BookItem?,
+            @Assisted("mode") mode: BookDetailMode,
+            @Assisted("onEditBookClicked") onEditBookClicked: (book: Book) -> Unit,
+            @Assisted("onChooseClicked") onChooseClicked: (bookItem: BookItem) -> Unit,
             @Assisted("componentContext") componentContext: ComponentContext,
         ): BookDetailScreenComponentImpl
     }

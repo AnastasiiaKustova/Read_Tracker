@@ -1,6 +1,6 @@
 package com.example.readtracker.android.presentation.addCollectionScreen
 
-import com.example.readtracker.android.domain.entity.AddCollectionInput
+import com.example.readtracker.android.domain.entity.bookCollection.AddCollectionInput
 import kotlinx.coroutines.flow.StateFlow
 
 interface AddCollectionScreenComponent {

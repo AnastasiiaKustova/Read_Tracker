@@ -1,17 +1,17 @@
 package com.example.readtracker.android.data.mapper
 
 import android.net.Uri
-import com.example.readtracker.android.domain.entity.Note
-import com.example.readtracker.android.domain.entity.NoteEntity
-import com.example.readtracker.android.domain.entity.Book
-import com.example.readtracker.android.domain.entity.BookCollection
-import com.example.readtracker.android.domain.entity.BookCollectionEntity
-import com.example.readtracker.android.domain.entity.BookCollectionWithBooksEntity
-import com.example.readtracker.android.domain.entity.BookEntity
+import com.example.readtracker.android.domain.entity.note.Note
+import com.example.readtracker.android.domain.entity.note.NoteEntity
+import com.example.readtracker.android.domain.entity.book.Book
+import com.example.readtracker.android.domain.entity.bookCollection.BookCollection
+import com.example.readtracker.android.domain.entity.bookCollection.BookCollectionEntity
+import com.example.readtracker.android.domain.entity.bookCollection.BookCollectionWithBooksEntity
+import com.example.readtracker.android.domain.entity.book.BookEntity
 import com.example.readtracker.android.domain.entity.BookStatus
-import com.example.readtracker.android.domain.entity.NoteWithTagsEntity
-import com.example.readtracker.android.domain.entity.Tag
-import com.example.readtracker.android.domain.entity.TagEntity
+import com.example.readtracker.android.domain.entity.note.NoteWithTagsEntity
+import com.example.readtracker.android.domain.entity.tag.Tag
+import com.example.readtracker.android.domain.entity.tag.TagEntity
 
 // --- ИЗ ДОМЕНА В БАЗУ ДАННЫХ (Одиночный объект) ---
 @JvmName("bookToBookEntity")
@@ -25,6 +25,8 @@ fun Book.toEntity(): BookEntity {
         totalPages = this.totalPages,
         currentPage = this.currentPage,
         quotesCount = this.quotesCount,
+        series = this.series,
+        idLitres = this.idLitres,
         bookStatusString = this.bookStatus.name // Enum превращаем в String ("FINISHED", "READING" и т.д.)
     )
 }
@@ -42,6 +44,8 @@ fun BookEntity.toDomain(): Book {
         totalPages = this.totalPages,
         currentPage = this.currentPage,
         quotesCount = this.quotesCount,
+        series = this.series,
+        idLitres = this.idLitres,
         // Восстанавливаем Enum из строки безопасно, с резервным статусом
         bookStatus = try {
             BookStatus.valueOf(this.bookStatusString)

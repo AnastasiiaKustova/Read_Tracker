@@ -5,8 +5,8 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
-import com.example.readtracker.android.domain.entity.Note
-import com.example.readtracker.android.domain.entity.Tag
+import com.example.readtracker.android.domain.entity.note.Note
+import com.example.readtracker.android.domain.entity.tag.Tag
 import com.example.readtracker.android.domain.useCases.GetNotesUseCase
 import com.example.readtracker.android.domain.useCases.GetTagsUseCase
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenStore.Intent

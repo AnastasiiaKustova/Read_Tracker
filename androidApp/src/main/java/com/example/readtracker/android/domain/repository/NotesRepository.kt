@@ -1,9 +1,9 @@
 package com.example.readtracker.android.domain.repository
 
-import com.example.readtracker.android.domain.entity.AddNoteInput
-import com.example.readtracker.android.domain.entity.AddTagInput
-import com.example.readtracker.android.domain.entity.Note
-import com.example.readtracker.android.domain.entity.Tag
+import com.example.readtracker.android.domain.entity.note.AddNoteInput
+import com.example.readtracker.android.domain.entity.tag.AddTagInput
+import com.example.readtracker.android.domain.entity.note.Note
+import com.example.readtracker.android.domain.entity.tag.Tag
 
 interface NotesRepository {
 

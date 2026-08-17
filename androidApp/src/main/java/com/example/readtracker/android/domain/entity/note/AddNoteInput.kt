@@ -1,4 +1,7 @@
-package com.example.readtracker.android.domain.entity
+package com.example.readtracker.android.domain.entity.note
+
+import com.example.readtracker.android.domain.entity.tag.Tag
+import com.example.readtracker.android.domain.entity.book.Book
 
 data class AddNoteInput(
     override val quoteText: String?,

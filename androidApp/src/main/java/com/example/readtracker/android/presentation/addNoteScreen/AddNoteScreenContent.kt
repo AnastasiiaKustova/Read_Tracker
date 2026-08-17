@@ -47,9 +47,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.readtracker.android.domain.entity.AddNoteInput
-import com.example.readtracker.android.domain.entity.Book
-import com.example.readtracker.android.domain.entity.Tag
+import com.example.readtracker.android.domain.entity.note.AddNoteInput
+import com.example.readtracker.android.domain.entity.book.Book
+import com.example.readtracker.android.domain.entity.tag.Tag
 import com.example.readtracker.android.presentation.common.CommonError
 import com.example.readtracker.android.presentation.common.CommonInitial
 import com.example.readtracker.android.presentation.common.CommonLoading
@@ -60,18 +60,21 @@ import com.example.readtracker.android.presentation.common.TagUtilityButton
 fun AddNoteScreenContent(component: AddNoteScreenComponent) {
     val state by component.model.collectAsState()
 
-    Box{
-        when(val screenState = state.screenState){
+    Box {
+        when (val screenState = state.screenState) {
             AddNoteScreenStore.State.ScreenState.Error -> CommonError()
             AddNoteScreenStore.State.ScreenState.Initial -> CommonInitial()
             is AddNoteScreenStore.State.ScreenState.Loaded -> {
                 CreateNoteScreen(
+                    selectedBook = screenState.selectedBook,
                     allAvailableTags = screenState.allAvailableTags,
+                    onSelectBookClick = { component.onBookSelectClick() },
                     onManageTagsClick = {},
                     onAddNewTagClick = {},
-                    onSaveNoteClick = { addNoteInput -> component.onSaveClick(addNoteInput)}
+                    onSaveNoteClick = { addNoteInput -> component.onSaveClick(addNoteInput) }
                 )
             }
+
             AddNoteScreenStore.State.ScreenState.Loading -> CommonLoading()
         }
     }
@@ -79,7 +82,9 @@ fun AddNoteScreenContent(component: AddNoteScreenComponent) {
 
 @Composable
 fun CreateNoteScreen(
+    selectedBook: Book?,
     allAvailableTags: Set<Tag>,        // Все созданные пользователем теги из базы данных
+    onSelectBookClick: () -> Unit,
     onManageTagsClick: () -> Unit,     // Клик по кнопке "Посмотреть все теги"
     onAddNewTagClick: () -> Unit,      // Клик по кнопке "Добавить тег"
     onSaveNoteClick: (addNoteInput: AddNoteInput) -> Unit,
@@ -95,8 +100,6 @@ fun CreateNoteScreen(
     // Множество выбранных тегов для этой заметки
     var selectedTags by remember { mutableStateOf(setOf<Tag>()) }
 
-    var selectedBook by remember { mutableStateOf(Book.test()) }
-
     // Триггер: прикреплена ли к заметке цитата из книги
     var hasQuote by remember { mutableStateOf(false) }
 
@@ -107,6 +110,35 @@ fun CreateNoteScreen(
             .verticalScroll(scrollState)
             .padding(24.dp)
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFFE5E5E5)) // Фирменный серый цвет
+                .clickable { onSelectBookClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (selectedBook == null)
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = Color.Black,
+                        modifier = Modifier.size(18.dp)
+                    )
+                Text(
+                    text = selectedBook?.title ?: "Выбрать книгу",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
         // --- 1. ОСНОВНОЙ ТЕКСТ ЗАМЕТКИ (МЫСЛИ ПОЛЬЗОВАТЕЛЯ) ---
         Text(
             text = "Мои мысли / Заметка",
@@ -324,7 +356,8 @@ fun CreateNoteScreen(
         Spacer(modifier = Modifier.height(40.dp))
 // --- 4. ДВЕ КНОПКИ СОХРАНЕНИЯ (Для себя / Опубликовать) ---
         // Заметка валидна, если написан хотя бы текст мыслей или текст цитаты
-        val isNoteValid = noteText.trim().isNotEmpty() || (hasQuote && quoteText.trim().isNotEmpty())
+        val isNoteValid = noteText.trim().isNotEmpty() || (hasQuote && quoteText.trim()
+            .isNotEmpty()) && selectedBook != null
 
         Row(
             modifier = Modifier
@@ -338,13 +371,15 @@ fun CreateNoteScreen(
                     val pageNumber = pageText.toIntOrNull()
                     val finalQuote = if (hasQuote && quoteText.isNotEmpty()) quoteText else null
                     // Передаем статус публикации false (только для себя)
-                    onSaveNoteClick(AddNoteInput(
-                        quoteText = finalQuote,
-                        pageNumber = pageNumber,
-                        userComment = noteText,
-                        book = selectedBook,
-                        tags = selectedTags,
-                        isPublic = false)
+                    onSaveNoteClick(
+                        AddNoteInput(
+                            quoteText = finalQuote,
+                            pageNumber = pageNumber,
+                            userComment = noteText,
+                            book = selectedBook ?: throw Exception("Error"),
+                            tags = selectedTags,
+                            isPublic = false
+                        )
                     )
                 },
                 modifier = Modifier
@@ -377,9 +412,10 @@ fun CreateNoteScreen(
                             quoteText = finalQuote,
                             pageNumber = pageNumber,
                             userComment = noteText,
-                            book = selectedBook,
+                            book = selectedBook ?: throw Exception("Error"),
                             tags = selectedTags,
-                            isPublic = true)
+                            isPublic = true
+                        )
                     )
                 },
                 modifier = Modifier
@@ -402,16 +438,4 @@ fun CreateNoteScreen(
             }
         }
     }
-}
-
-@Preview
-@Composable
-fun CreateNoteScreenTest(){
-    CreateNoteScreen(
-        setOf(Tag.test1(), Tag.test2()),
-        {},
-        {},
-        { addNoteInput: AddNoteInput ->
-        },
-    )
 }
