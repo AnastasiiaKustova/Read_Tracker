@@ -6,13 +6,16 @@ import com.example.readtracker.android.data.local.AppDatabase
 import com.example.readtracker.android.data.repository.BooksRepositoryImpl
 import com.example.readtracker.android.data.repository.LitresRepositoryImpl
 import com.example.readtracker.android.data.repository.NotesRepositoryImpl
+import com.example.readtracker.android.data.repository.StatsRepositoryImpl
 import com.example.readtracker.android.domain.model.BookDao
 import com.example.readtracker.android.domain.model.CollectionDao
 import com.example.readtracker.android.domain.model.NoteDao
+import com.example.readtracker.android.domain.model.StatsDao
 import com.example.readtracker.android.domain.model.TagDao
 import com.example.readtracker.android.domain.repository.BooksRepository
 import com.example.readtracker.android.domain.repository.LitresRepository
 import com.example.readtracker.android.domain.repository.NotesRepository
+import com.example.readtracker.android.domain.repository.StatsRepository
 import com.google.gson.Gson
 import dagger.Binds
 import dagger.Module
@@ -29,6 +32,9 @@ interface DataModule {
 
     @[ApplicationScope Binds]
     fun bindLitresRepository(impl: LitresRepositoryImpl): LitresRepository
+
+    @[ApplicationScope Binds]
+    fun bindStatsRepository(impl: StatsRepositoryImpl): StatsRepository
 
     companion object{
         @[Provides ApplicationScope] fun provideGson(): Gson = Gson()

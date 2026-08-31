@@ -8,6 +8,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import java.text.NumberFormat
 import java.util.Locale
+import java.text.SimpleDateFormat
+import java.util.Date
 
 fun ComponentContext.componentScope() : CoroutineScope = CoroutineScope(
     Dispatchers.Main.immediate + SupervisorJob()
@@ -26,4 +28,15 @@ fun Int.formatWithSpace(): String {
     } catch (e: Exception) {
         "0"
     }
+}
+
+fun Long.formatTimestamp(pattern: String = "d MMMM yyyy, HH:mm"): String {
+    // 1. Создаем классический объект Date прямо из миллисекунд (this)
+    val date = Date(this)
+
+    // 2. Создаем форматтер с учетом языка системы устройства
+    val formatter = SimpleDateFormat(pattern, Locale.getDefault())
+
+    // 3. Возвращаем готовую красивую строку
+    return formatter.format(date)
 }

@@ -10,8 +10,10 @@ import com.example.readtracker.android.domain.entity.BookDetail
 import com.example.readtracker.android.domain.entity.BookDetailMode
 import com.example.readtracker.android.domain.entity.database.BookItem
 import com.example.readtracker.android.domain.entity.BookStatus
+import com.example.readtracker.android.domain.entity.stats.AddStatsInput
 import com.example.readtracker.android.domain.useCases.GetBookByIdUseCase
 import com.example.readtracker.android.domain.useCases.SearchCategoriesUseCase
+import com.example.readtracker.android.domain.useCases.AddActivityUseCase
 import com.example.readtracker.android.domain.useCases.UpdateBookUseCase
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.Intent
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.Label
@@ -57,7 +59,8 @@ class BookDetailScreenStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
     private val getBookByIdUseCase: GetBookByIdUseCase,
     private val updateBookUseCase: UpdateBookUseCase,
-    private val searchCategoriesUseCase: SearchCategoriesUseCase
+    private val searchCategoriesUseCase: SearchCategoriesUseCase,
+    private val addActivityUseCase: AddActivityUseCase
 ) {
     fun create(bookId: String?, bookItem: BookItem?, mode: BookDetailMode): BookDetailScreenStore =
         object : BookDetailScreenStore, Store<Intent, State, Label> by storeFactory.create(
@@ -163,6 +166,14 @@ class BookDetailScreenStoreFactory @Inject constructor(
 
                                 withContext(Dispatchers.IO) {
                                     updateBookUseCase(updatedBook)
+                                    addActivityUseCase(
+                                        AddStatsInput(
+                                            book = updatedBook,
+                                            pagesRead = newPage - currentBook.currentPage,
+                                            durationMinutes = 0,
+                                            statusChangedTo = intent.newStatus
+                                        )
+                                    )
                                 }
 
                                 dispatch(ScreenLoaded(bookDetail = bookDetail.copy(book = updatedBook)))
@@ -198,6 +209,14 @@ class BookDetailScreenStoreFactory @Inject constructor(
 
                                 withContext(Dispatchers.IO) {
                                     updateBookUseCase(updatedBook)
+                                    addActivityUseCase(
+                                        AddStatsInput(
+                                            book = updatedBook,
+                                            pagesRead = intent.newPage - currentBook.currentPage,
+                                            durationMinutes = 0,
+                                            statusChangedTo = if (currentBook.bookStatus == newStatus) null else newStatus
+                                        )
+                                    )
                                 }
 
                                 dispatch(ScreenLoaded(bookDetail = bookDetail.copy(book = updatedBook)))

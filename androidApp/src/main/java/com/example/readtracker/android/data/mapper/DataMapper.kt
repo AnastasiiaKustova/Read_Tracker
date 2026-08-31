@@ -10,6 +10,9 @@ import com.example.readtracker.android.domain.entity.bookCollection.BookCollecti
 import com.example.readtracker.android.domain.entity.book.BookEntity
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.note.NoteWithTagsEntity
+import com.example.readtracker.android.domain.entity.stats.ReadStat
+import com.example.readtracker.android.domain.entity.stats.StatsEntity
+import com.example.readtracker.android.domain.entity.stats.StatsWithBookEntity
 import com.example.readtracker.android.domain.entity.tag.Tag
 import com.example.readtracker.android.domain.entity.tag.TagEntity
 
@@ -192,5 +195,45 @@ fun List<BookCollectionWithBooksEntity>.toDomainSet(): Set<BookCollection> {
 // Из вашего Set<BookCollection> в обычный плоский List<BookCollectionEntity> (если нужно сохранить пачкой без тегов)
 @JvmName("setBookCollectionToListBookCollectionEntity")
 fun Set<BookCollection>.toEntityList(): List<BookCollectionEntity> {
+    return this.map { it.toEntity() }
+}
+
+@JvmName("readStatToStatsEntity")
+fun ReadStat.toEntity(): StatsEntity {
+    return StatsEntity(
+        id = this.id,
+        timestamp = this.timestamp,
+        bookId = this.book.id, // Вытаскиваем ID книги для внешнего ключа (foreignKey)
+        pagesRead = this.pagesRead,
+        durationMinutes = this.durationMinutes,
+        statusChangedTo = this.statusChangedTo?.name // Маппим Enum статуса в String? ("COMPLETED", "READING" и т.д.)
+    )
+}
+
+@JvmName("statsWithBookToDomain")
+fun StatsWithBookEntity.toDomain(): ReadStat {
+    return ReadStat(
+        id = this.stats.id,
+        timestamp = this.stats.timestamp,
+        book = this.book.toDomain(), // Используем ваш стандартный маппер книги BookEntity.toDomain()
+        pagesRead = this.stats.pagesRead,
+        durationMinutes = this.stats.durationMinutes,
+        statusChangedTo = this.stats.statusChangedTo?.let {
+            try { BookStatus.valueOf(it) } catch (e: Exception) { null }
+        }
+    )
+}
+
+// Маппер для списков
+@JvmName("statsWithBookListToDomainList")
+fun List<StatsWithBookEntity>.toDomainList(): List<ReadStat> {
+    return this.map { it.toDomain() }
+}
+
+// --- 3. МАППЕРЫ ДЛЯ КОЛЛЕКЦИЙ ---
+
+// Из List<ReadStat> в List<StatsEntity> (для сохранения пачкой/списком в Room)
+@JvmName("readStatListToStatsEntityList")
+fun List<ReadStat>.toEntityList(): List<StatsEntity> {
     return this.map { it.toEntity() }
 }
