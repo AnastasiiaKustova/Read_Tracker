@@ -29,6 +29,10 @@ interface NoteDao {
     @Query("SELECT * FROM notes WHERE id = :noteId")
     suspend fun getNoteById(noteId: String): NoteWithTagsEntity?
 
+    @Transaction
+    @Query("SELECT * FROM notes WHERE bookId = :bookId")
+    suspend fun getNoteByBookId(bookId: String): List<NoteWithTagsEntity>
+
     // 4. Поиск списка заметок с их тегами по множеству ID
     @Transaction
     @Query("SELECT * FROM notes WHERE id IN (:noteIds)")

@@ -13,7 +13,8 @@ import com.example.readtracker.android.domain.entity.book.BookEntity
             entity = BookEntity::class,
             parentColumns = ["id"],
             childColumns = ["bookId"],
-            onDelete = ForeignKey.CASCADE // Каскадное удаление
+            onDelete = ForeignKey.NO_ACTION, // <-- ИЗМЕНИТЕ НА ЭТО
+            onUpdate = ForeignKey.CASCADE
         )
     ],
     indices = [Index(value = ["bookId"])] // Добавляем индекс для скорости)

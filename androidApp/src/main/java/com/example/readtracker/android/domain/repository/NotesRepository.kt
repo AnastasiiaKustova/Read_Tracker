@@ -11,6 +11,8 @@ interface NotesRepository {
 
     suspend fun getNote(id: String) : Note
 
+    suspend fun getNotesByBookId(id: String) : Set<Note>
+
     suspend fun addTag(addTagInput: AddTagInput)
 
     suspend fun getTag(id: String) : Tag

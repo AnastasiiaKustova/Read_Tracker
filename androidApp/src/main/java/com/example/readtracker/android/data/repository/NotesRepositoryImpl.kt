@@ -34,6 +34,10 @@ class NotesRepositoryImpl@Inject constructor(
         return entity.toDomain()
     }
 
+    override suspend fun getNotesByBookId(id: String): Set<Note> {
+        return noteDao.getNoteByBookId(id).toDomainSet()
+    }
+
     override suspend fun addTag(addTagInput: AddTagInput) {
         val generatedId = java.util.UUID.randomUUID().toString()
         val finalTag = Tag(generatedId, addTagInput.title)

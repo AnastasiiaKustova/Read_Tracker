@@ -27,7 +27,7 @@ fun Book.toEntity(): BookEntity {
         coverUriString = this.coverUri?.toString(), // Uri превращаем в String
         totalPages = this.totalPages,
         currentPage = this.currentPage,
-        quotesCount = this.quotesCount,
+        rating = this.rating,
         series = this.series,
         idLitres = this.idLitres,
         bookStatusString = this.bookStatus.name // Enum превращаем в String ("FINISHED", "READING" и т.д.)
@@ -46,7 +46,7 @@ fun BookEntity.toDomain(): Book {
         coverUri = this.coverUriString?.let { Uri.parse(it) },
         totalPages = this.totalPages,
         currentPage = this.currentPage,
-        quotesCount = this.quotesCount,
+        rating = this.rating,
         series = this.series,
         idLitres = this.idLitres,
         // Восстанавливаем Enum из строки безопасно, с резервным статусом

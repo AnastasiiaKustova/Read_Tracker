@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.example.readtracker.android.domain.entity.stats.StatsEntity
 import com.example.readtracker.android.domain.entity.stats.StatsWithBookEntity
 import kotlinx.coroutines.flow.Flow
@@ -11,8 +12,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface StatsDao {
     // 1. Получить точные сессии для списка внизу экрана за конкретный день (границы в миллисекундах)
+    @Transaction
     @Query("SELECT * FROM stats WHERE timestamp BETWEEN :startTimestamp AND :endTimestamp ORDER BY timestamp DESC")
-    fun getActivitiesForPeriod(startTimestamp: Long, endTimestamp: Long): List<StatsWithBookEntity>
+    suspend fun getActivitiesForPeriod(startTimestamp: Long, endTimestamp: Long): List<StatsWithBookEntity>
 
     // 2. Экономный подсчет общих метрик (минуты, страницы) за любой период для графиков
     // SQL сделает это мгновенно, не загружая объекты в память телефона

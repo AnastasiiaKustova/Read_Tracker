@@ -16,6 +16,6 @@ data class Book(
     override val series: String,
     override val idLitres: Long?,
     val currentPage: Int,
-    val quotesCount: Int,
+    val rating: Int,
     val bookStatus: BookStatus,
 ) : BookFields, Parcelable

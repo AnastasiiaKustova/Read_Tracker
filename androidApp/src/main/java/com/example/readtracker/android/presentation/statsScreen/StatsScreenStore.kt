@@ -94,7 +94,7 @@ class StatsScreenStoreFactory @Inject constructor(
                 try {
                     val defaultDate = Date()
                     val defaultTab = PeriodTab.DAYS
-                    val statsDetails = getStatsDetailsUseCase(defaultDate, defaultTab)
+                    val statsDetails = getStatsDetailsUseCase(defaultDate, defaultTab, null)
                     dispatch(Action.ScreenLoaded(statsDetails))
                 } catch (e: Exception) {
                     e.printStackTrace() // <-- Добавьте эту строчку, чтобы распечатать ошибку в Logcat
@@ -132,15 +132,14 @@ class StatsScreenStoreFactory @Inject constructor(
 
         override fun executeIntent(intent: Intent) {
             when (intent) {
-                // 1. СМЕНА В КЛАДКИ (Дни / Недели / Месяцы / Календарь)
+                // 1. СМЕНА ВКЛАДКИ (Дни / Недели / Месяцы / Календарь)
                 is Intent.ClickTabSwitch -> {
                     dispatch(Msg.ScreenLoading)
                     scope.launch {
                         try {
-                            //val currentState = state()
                             val defaultDate = Date()
-                            // Вызываем юзкейс с текущей сохраненной датой, но новым табом
-                            val statsDetails = getStatsDetailsUseCase(defaultDate, intent.selectedTab)
+                            // Передаем null, так как при переключении таба по умолчанию выбрана ВСЯ неделя/месяц
+                            val statsDetails = getStatsDetailsUseCase(defaultDate, intent.selectedTab, null)
                             dispatch(Msg.ScreenLoaded(statsDetails, defaultDate, intent.selectedTab))
                         } catch (e: Exception) {
                             dispatch(Msg.ScreenError)
@@ -148,41 +147,26 @@ class StatsScreenStoreFactory @Inject constructor(
                     }
                 }
 
-                // 2. УНИВЕРСАЛЬНЫЙ СДВИГ ПЕРИОДА (Стрелочки календаря или свайп графиков: -1 или +1)
+                // 2. УНИВЕРСАЛЬНЫЙ СДВИГ ПЕРИОДА (Стрелочки календаря или свайп графиков)
                 is Intent.ChangePeriod -> {
                     dispatch(Msg.ScreenLoading)
                     scope.launch {
                         try {
                             val currentState = state()
-
                             val calendar = Calendar.getInstance().apply { time = currentState.selectedDate }
 
-                            // В зависимости от масштаба экрана умножаем intent.offset (-1 или +1) на размер страницы данных
                             when (currentState.selectedTab) {
-                                PeriodTab.DAYS -> {
-                                    // Перелистываем всю неделю целиком (шаг в 7 дней)
-                                    calendar.add(Calendar.DAY_OF_MONTH, intent.offset * 7)
-                                }
-                                PeriodTab.WEEKS -> {
-                                    // Перелистываем блок из 7 недель (шаг в 7 недель)
-                                    calendar.add(Calendar.WEEK_OF_YEAR, intent.offset * 7)
-                                }
-                                PeriodTab.MONTHS -> {
-                                    // Перелистываем сразу на целый год назад или вперед
-                                    calendar.add(Calendar.YEAR, intent.offset)
-                                }
-                                PeriodTab.CALENDAR -> {
-                                    // В режиме календаря стандартно двигаемся ровно по 1 месяцу
-                                    calendar.add(Calendar.MONTH, intent.offset)
-                                }
+                                PeriodTab.DAYS -> calendar.add(Calendar.DAY_OF_MONTH, intent.offset * 7)
+                                PeriodTab.WEEKS -> calendar.add(Calendar.WEEK_OF_YEAR, intent.offset * 7)
+                                PeriodTab.MONTHS -> calendar.add(Calendar.YEAR, intent.offset)
+                                PeriodTab.CALENDAR -> calendar.add(Calendar.MONTH, intent.offset)
                             }
                             val newDate = calendar.time
 
-                            // Запрашиваем новые отмасштабированные данные из Room через Юзкейс
-                            val statsDetails = getStatsDetailsUseCase(newDate, currentState.selectedTab)
+                            // При сдвиге периода (например, ушли на прошлую неделю) сбрасываем фокус на null (выбрана вся неделя)
+                            val statsDetails = getStatsDetailsUseCase(newDate, currentState.selectedTab, null)
                             dispatch(Msg.ScreenLoaded(statsDetails, newDate, currentState.selectedTab))
                         } catch (e: Exception) {
-                            e.printStackTrace()
                             dispatch(Msg.ScreenError)
                         }
                     }
@@ -194,16 +178,15 @@ class StatsScreenStoreFactory @Inject constructor(
                     scope.launch {
                         try {
                             val currentState = state()
-
-                            // Меняем число в текущей просматриваемой дате на то, по которому кликнули
                             val calendar = Calendar.getInstance().apply {
                                 time = currentState.selectedDate
                                 set(Calendar.DAY_OF_MONTH, intent.dayNumber)
                             }
                             val newDate = calendar.time
 
-                            // Перезапрашиваем данные за этот конкретный день
-                            val statsDetails = getStatsDetailsUseCase(newDate, currentState.selectedTab)
+                            // В режиме календаря мы всегда смотрим конкретный день, поэтому передаем null
+                            // (Юзкейс сам отфильтрует по дню, если выбран PeriodTab.CALENDAR)
+                            val statsDetails = getStatsDetailsUseCase(newDate, currentState.selectedTab, null)
                             dispatch(Msg.ScreenLoaded(statsDetails, newDate, currentState.selectedTab))
                         } catch (e: Exception) {
                             dispatch(Msg.ScreenError)
@@ -211,36 +194,24 @@ class StatsScreenStoreFactory @Inject constructor(
                     }
                 }
 
-                // 4. КЛИК НА СТОЛБИК ГРАФИКА
+                // 4. КЛИК НА СТОЛБИК ГРАФИКА (Дни / Месяцы)
                 is Intent.ClickBar -> {
                     dispatch(Msg.ScreenLoading)
                     scope.launch {
                         try {
                             val currentState = state()
-                            val calendar = Calendar.getInstance().apply { time = currentState.selectedDate }
 
-                            // Вычисляем, на какую дату указывает столбик графика
-                            val newDate = when (currentState.selectedTab) {
-                                PeriodTab.DAYS -> {
-                                    // Находим Понедельник текущей недели
-                                    val currentDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
-                                    val diffToMonday = if (currentDayOfWeek == Calendar.SUNDAY) -6 else Calendar.MONDAY - currentDayOfWeek
-                                    calendar.add(Calendar.DAY_OF_MONTH, diffToMonday)
-                                    // Сдвигаем на индекс кликнутого бара (0 = Пн, 1 = Вт...)
-                                    calendar.add(Calendar.DAY_OF_MONTH, intent.index)
-                                    calendar.time
-                                }
-                                PeriodTab.MONTHS -> {
-                                    // Устанавливаем месяц, равный индексу столбика (0 = Январь, 1 = Февраль...)
-                                    calendar.set(Calendar.MONTH, intent.index)
-                                    calendar.time
-                                }
-                                else -> currentState.selectedDate // Для остальных табов оставляем базовую дату
-                            }
+                            // Передаем базовую дату, текущий таб И индекс кликнутого столбика (intent.index)
+                            // Юзкейс сам сузит выборку до этого дня/месяца и пересчитает цифры!
+                            val statsDetails = getStatsDetailsUseCase(
+                                date = currentState.selectedDate,
+                                periodTab = currentState.selectedTab,
+                                selectedBarIndex = intent.index
+                            )
 
-                            // Перезапрашиваем статистику
-                            val statsDetails = getStatsDetailsUseCase(newDate, currentState.selectedTab)
-                            dispatch(Msg.ScreenLoaded(statsDetails, newDate, currentState.selectedTab))
+                            // Сохраняем состояние. Базовую дату (selectedDate) менять НЕ нужно,
+                            // так как мы остаемся в рамках той же недели/года, просто сфокусировались на баре
+                            dispatch(Msg.ScreenLoaded(statsDetails, currentState.selectedDate, currentState.selectedTab))
                         } catch (e: Exception) {
                             dispatch(Msg.ScreenError)
                         }

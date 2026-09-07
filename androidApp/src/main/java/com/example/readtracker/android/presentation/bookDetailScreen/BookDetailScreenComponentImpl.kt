@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 class BookDetailScreenComponentImpl @AssistedInject constructor(
     private val storeFactory: BookDetailScreenStoreFactory,
     @Assisted("onEditBookClicked") private val onEditBookClicked: (book: Book) -> Unit,
+    @Assisted("onStartReadingClicked") private val onStartReadingClicked: (book: Book) -> Unit,
     @Assisted("onChooseClicked") private val onChooseClicked: (bookItem: BookItem) -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
     @Assisted("bookId") private val bookId: String?,
@@ -47,6 +48,7 @@ class BookDetailScreenComponentImpl @AssistedInject constructor(
                             when (label) {
                                 is BookDetailScreenStore.Label.ClickEditBook -> onEditBookClicked(label.book)
                                 is BookDetailScreenStore.Label.ClickChoose -> onChooseClicked(label.bookItem)
+                                is BookDetailScreenStore.Label.ClickStartReading -> onStartReadingClicked(label.book)
                             }
                         }
                     }
@@ -71,12 +73,20 @@ class BookDetailScreenComponentImpl @AssistedInject constructor(
         store.accept(BookDetailScreenStore.Intent.ClickChangeStatus(newStatus))
     }
 
+    override fun onBookCompleted(rating: Int, note: String) {
+        store.accept(BookDetailScreenStore.Intent.ClickBookCompleted(rating, note))
+    }
+
     override fun onUpdatePageClick(newPage: Int) {
         store.accept(BookDetailScreenStore.Intent.ClickUpdatePage(newPage))
     }
 
     override fun onChooseClick(bookItem: BookItem) {
         store.accept(BookDetailScreenStore.Intent.ClickChoose(bookItem))
+    }
+
+    override fun onStartReadingClick(book: Book) {
+        store.accept(BookDetailScreenStore.Intent.ClickStartReading(book))
     }
 
     @AssistedFactory
@@ -86,6 +96,7 @@ class BookDetailScreenComponentImpl @AssistedInject constructor(
             @Assisted("bookItem") bookItem: BookItem?,
             @Assisted("mode") mode: BookDetailMode,
             @Assisted("onEditBookClicked") onEditBookClicked: (book: Book) -> Unit,
+            @Assisted("onStartReadingClicked") onStartReadingClicked: (book: Book) -> Unit,
             @Assisted("onChooseClicked") onChooseClicked: (bookItem: BookItem) -> Unit,
             @Assisted("componentContext") componentContext: ComponentContext,
         ): BookDetailScreenComponentImpl

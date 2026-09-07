@@ -8,5 +8,6 @@ data class BookDetail(
     val book: Book?,
     val bookItem: BookItem?,
     val categories: List<CategoryItem>,
-    val mode: BookDetailMode
+    val mode: BookDetailMode,
+    val notesCount: Int = 0,
 )
