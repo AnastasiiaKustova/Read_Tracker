@@ -15,6 +15,9 @@ interface TagDao {
     @Query("SELECT * FROM tags")
     suspend fun getAllTags(): List<TagEntity>
 
+    @Query("SELECT tags.* FROM tags LEFT JOIN note_tag_cross_ref ON tags.id = note_tag_cross_ref.tagId GROUP BY tags.id ORDER BY COUNT (note_tag_cross_ref.noteId) DESC, tags.title ASC")
+    suspend fun getTagsSortedByUsage(): List<TagEntity>
+
     @Query("SELECT * FROM tags WHERE id = :tagId")
     suspend fun getTagById(tagId: String): TagEntity?
 
@@ -26,4 +29,7 @@ interface TagDao {
 
     @Query("DELETE FROM tags WHERE id = :tagId")
     suspend fun deleteTag(tagId: String)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertTags(tags: List<TagEntity>)
 }

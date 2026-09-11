@@ -24,20 +24,20 @@ fun CustomInputField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = { Text(text = label, color = Color.Gray, fontSize = 15.sp) },
-        modifier = modifier
-            .fillMaxWidth()
-            .height(52.dp),
-        shape = RoundedCornerShape(16.dp),
-        singleLine = true,
+        label = { Text(label, color = Color.Gray) },
         keyboardOptions = keyboardOptions,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        // Явно задаем цвет текста для Material 3
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = Color.Black,
             unfocusedTextColor = Color.Black,
-            focusedContainerColor = Color(0xFFE5E5E5),
-            unfocusedContainerColor = Color(0xFFE5E5E5),
+            focusedContainerColor = Color(0xFFF5F5F5),
+            unfocusedContainerColor = Color(0xFFF5F5F5),
             focusedBorderColor = Color.Transparent,
-            unfocusedBorderColor = Color.Transparent
+            unfocusedBorderColor = Color.Transparent,
+            // Дополнительно отключаем прозрачность для индикаторов, если они мешают
+            disabledTextColor = Color.DarkGray
         )
     )
 }

@@ -9,12 +9,14 @@ import com.example.readtracker.android.domain.entity.note.Note
 import com.example.readtracker.android.domain.entity.tag.Tag
 import com.example.readtracker.android.domain.useCases.GetNotesUseCase
 import com.example.readtracker.android.domain.useCases.GetTagsUseCase
+import com.example.readtracker.android.domain.useCases.ObserveNoteScreenDataUseCase
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenStore.Intent
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenStore.Label
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenStore.Label.ClickAddNote
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenStore.Label.ClickNote
 import com.example.readtracker.android.presentation.noteScreen.NoteScreenStore.State
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -54,6 +56,7 @@ class NoteScreenStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
     private val getNotesUseCase: GetNotesUseCase,
     private val getTagsUseCase: GetTagsUseCase,
+    private val observeNoteScreenDataUseCase: ObserveNoteScreenDataUseCase
 ) {
 
     fun create(): NoteScreenStore =
@@ -92,6 +95,32 @@ class NoteScreenStoreFactory @Inject constructor(
 
     private inner class BootstrapperImpl: CoroutineBootstrapper<Action>() {
         override fun invoke() {
+
+            scope.launch {
+                dispatch(Action.ScreenLoading)
+            }
+
+            scope.launch {
+                try {
+                    withContext(Dispatchers.IO) {
+                        observeNoteScreenDataUseCase()
+                            .distinctUntilChanged()
+                            .collect { noteScreenItem ->
+                                withContext(Dispatchers.Main) {
+                                    dispatch(
+                                        Action.ScreenLoaded(
+                                            notes = noteScreenItem.notes,
+                                            tags = noteScreenItem.tags
+                                        )
+                                    )
+                                }
+                            }
+                    }
+                } catch (e: Exception) {
+                    dispatch(Action.ScreenError)
+                }
+            }
+
             scope.launch {
                 dispatch(Action.ScreenLoading)
                 try {

@@ -2,11 +2,13 @@ package com.example.readtracker.android.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.RoomDatabase
 import com.example.readtracker.android.data.local.AppDatabase
 import com.example.readtracker.android.data.repository.BooksRepositoryImpl
 import com.example.readtracker.android.data.repository.LitresRepositoryImpl
 import com.example.readtracker.android.data.repository.NotesRepositoryImpl
 import com.example.readtracker.android.data.repository.StatsRepositoryImpl
+import com.example.readtracker.android.domain.entity.tag.Tag
 import com.example.readtracker.android.domain.model.BookDao
 import com.example.readtracker.android.domain.model.CollectionDao
 import com.example.readtracker.android.domain.model.NoteDao
@@ -40,11 +42,26 @@ interface DataModule {
         @[Provides ApplicationScope] fun provideGson(): Gson = Gson()
         @[Provides ApplicationScope]
         fun provideAppDatabase(context: Context): AppDatabase {
+            val databaseCallback = object : RoomDatabase.Callback() {
+                override fun onOpen(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                    super.onOpen(db)
+
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                        Tag.DEFAULT_TAGS.forEach { tag ->
+                            db.execSQL(
+                                "INSERT OR IGNORE INTO tags (id, title) VALUES ('${tag.id}', '${tag.title}')"
+                            )
+                        }
+                    }
+                }
+            }
+
             return Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
                 "read_tracker_database"
             )
+                .addCallback(databaseCallback)
                 .build()
         }
 

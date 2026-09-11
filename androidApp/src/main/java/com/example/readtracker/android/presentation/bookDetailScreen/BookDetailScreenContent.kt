@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import com.example.readtracker.android.core.formatWithSpace
+import com.example.readtracker.android.domain.entity.BookDetail
 import com.example.readtracker.android.domain.entity.book.Book
 import com.example.readtracker.android.domain.entity.BookDetailMode
 import com.example.readtracker.android.domain.entity.database.BookItem
@@ -81,9 +82,7 @@ fun BookDetailScreenContent(component: BookDetailScreenComponent) {
                         if (bookDetail.book == null) CommonError()
                         else
                             BookDetailScreen(
-                                book = bookDetail.book,
-                                categories = bookDetail.categories,
-                                notesCount = bookDetail.notesCount,
+                                bookDetail = bookDetail,
                                 onEditBookClick = { component.onEditBookClick(bookDetail.book) },
                                 onUpdatePageClick = { newPage -> component.onUpdatePageClick(newPage) },
                                 onChangeStatusClick = { newStatus ->
@@ -94,7 +93,7 @@ fun BookDetailScreenContent(component: BookDetailScreenComponent) {
                                 onBookCompleted = { rating: Int, note: String ->
                                     component.onBookCompleted(rating, note)
                                 },
-                                onStartReading = { component.onStartReadingClick(bookDetail.book)}
+                                onStartReading = { component.onStartReadingClick(bookDetail.book) }
                             )
                     }
 
@@ -120,9 +119,7 @@ fun BookDetailScreenContent(component: BookDetailScreenComponent) {
 
 @Composable
 fun BookDetailScreen(
-    book: Book,
-    notesCount: Int,
-    categories: List<CategoryItem>,
+    bookDetail: BookDetail,
     onEditBookClick: () -> Unit,       // Лямбда для карандашика редактирования
     onChangeStatusClick: (BookStatus) -> Unit,   // Лямбда для кнопки смены статуса
     onUpdatePageClick: (Int) -> Unit,     // Лямбда для кнопки ввода страницы
@@ -130,6 +127,8 @@ fun BookDetailScreen(
     onStartReading: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val book = bookDetail.book ?: throw Exception("Error")
+
     val scrollState = rememberScrollState()
     val progress = if (book.totalPages > 0) book.currentPage.toFloat() / book.totalPages else 0f
     val percentage = round((progress * 100)).toInt()
@@ -256,7 +255,16 @@ fun BookDetailScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StatItem(value = book.totalPages.formatWithSpace(), label = "Страниц")
-                StatItem(value = notesCount.toString(), label = "Заметок")
+                StatItem(value = bookDetail.notesCount.toString(), label = "Заметок")
+            }
+
+            if (bookDetail.firstReadingDate != null && bookDetail.lastReadingDate != null) {
+                Spacer(modifier = Modifier.height(24.dp))
+                ReadingTimeline(
+                    firstReadingDate = bookDetail.firstReadingDate,
+                    lastReadingDate = bookDetail.lastReadingDate,
+                    finishedDate = bookDetail.finishedDate
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))

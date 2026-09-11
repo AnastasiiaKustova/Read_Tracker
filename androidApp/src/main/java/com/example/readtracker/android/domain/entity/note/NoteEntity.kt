@@ -26,5 +26,5 @@ data class NoteEntity(
     val userComment: String,
     val bookId: String,
     val isPublic: Boolean,
-    val createdAt: String,
+    val createdAt: Long,
 )

@@ -1,11 +1,15 @@
 package com.example.readtracker.android.domain.repository
 
+import com.example.readtracker.android.domain.entity.NoteScreenItem
 import com.example.readtracker.android.domain.entity.note.AddNoteInput
 import com.example.readtracker.android.domain.entity.tag.AddTagInput
 import com.example.readtracker.android.domain.entity.note.Note
 import com.example.readtracker.android.domain.entity.tag.Tag
+import kotlinx.coroutines.flow.Flow
 
 interface NotesRepository {
+
+    val noteScreenFlow: Flow<NoteScreenItem>
 
     suspend fun addNote(addNoteInput: AddNoteInput)
 

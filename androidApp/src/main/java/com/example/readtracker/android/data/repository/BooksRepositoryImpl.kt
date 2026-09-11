@@ -13,7 +13,10 @@ import com.example.readtracker.android.domain.entity.book.BookEntity
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.MainScreenItem
 import com.example.readtracker.android.domain.entity.MainScreenItem.Companion.default
+import com.example.readtracker.android.domain.entity.book.BookWithStats
 import com.example.readtracker.android.domain.entity.book.toBook
+import com.example.readtracker.android.domain.entity.book.toDomain
+import com.example.readtracker.android.domain.entity.book.toDomainSet
 import com.example.readtracker.android.domain.entity.bookCollection.toBookCollection
 import com.example.readtracker.android.domain.model.BookDao
 import com.example.readtracker.android.domain.model.CollectionDao
@@ -70,6 +73,11 @@ class BooksRepositoryImpl @Inject constructor(
         return entity.toDomain()
     }
 
+    override suspend fun getBookWithStats(id: String): BookWithStats {
+        val entity = bookDao.getBookWithFullStatsById(id) ?: throw Exception("Книга не найдена")
+        return entity.toDomain()
+    }
+
     override suspend fun getBooks(collectionId: String?, bookStatus: BookStatus?): Set<Book> {
         val entities: List<BookEntity> = if (collectionId != null) {
             val entity = collectionDao.getCollectionById(collectionId) ?: throw Exception("Коллекция не найдена")
@@ -82,6 +90,11 @@ class BooksRepositoryImpl @Inject constructor(
             bookDao.getAllBooks()
         }
 
+        return entities.toDomainSet()
+    }
+
+    override suspend fun getBooksWithFullStats(): Set<BookWithStats> {
+        val entities = bookDao.getAllBooksWithFullStats()
         return entities.toDomainSet()
     }
 

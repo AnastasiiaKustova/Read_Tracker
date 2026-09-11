@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.Flow
 interface NoteDao {
 
     // 1. Получить поток всех заметок с их тегами (для автоматического обновления UI)
-    @Transaction
     @Query("SELECT * FROM notes")
     fun getAllNotesFlow(): Flow<List<NoteWithTagsEntity>>
 

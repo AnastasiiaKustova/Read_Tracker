@@ -12,11 +12,10 @@ import com.example.readtracker.android.domain.entity.database.BookItem
 import com.example.readtracker.android.domain.entity.BookStatus
 import com.example.readtracker.android.domain.entity.note.AddNoteInput
 import com.example.readtracker.android.domain.entity.stats.AddStatsInput
-import com.example.readtracker.android.domain.useCases.GetBookByIdUseCase
 import com.example.readtracker.android.domain.useCases.SearchCategoriesUseCase
 import com.example.readtracker.android.domain.useCases.AddActivityUseCase
 import com.example.readtracker.android.domain.useCases.AddNoteUseCase
-import com.example.readtracker.android.domain.useCases.GetNotesByBookIdUseCase
+import com.example.readtracker.android.domain.useCases.GetBookWithStatsByIdUseCase
 import com.example.readtracker.android.domain.useCases.UpdateBookUseCase
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.Intent
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.Label
@@ -64,12 +63,11 @@ interface BookDetailScreenStore : Store<Intent, State, Label> {
 
 class BookDetailScreenStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
-    private val getBookByIdUseCase: GetBookByIdUseCase,
+    private val getBookByIdUseCase: GetBookWithStatsByIdUseCase,
     private val updateBookUseCase: UpdateBookUseCase,
     private val searchCategoriesUseCase: SearchCategoriesUseCase,
     private val addActivityUseCase: AddActivityUseCase,
     private val addNoteUseCase: AddNoteUseCase,
-    private val getNotesByBookIdUseCase: GetNotesByBookIdUseCase,
 
     ) {
     fun create(bookId: String?, bookItem: BookItem?, mode: BookDetailMode): BookDetailScreenStore =
@@ -111,14 +109,16 @@ class BookDetailScreenStoreFactory @Inject constructor(
                 try {
                     val bookDetail = when (mode){
                         BookDetailMode.VIEW -> {
-                            val book = if (bookId == null) {throw Exception("Error") } else { getBookByIdUseCase(bookId) }
-                            val notesCount = getNotesByBookIdUseCase(bookId).count()
+                            val bookWithStats = if (bookId == null) {throw Exception("Error") } else { getBookByIdUseCase(bookId) }
                             BookDetail(
-                                book = book,
+                                book = bookWithStats.book,
                                 bookItem = null,
                                 categories = emptyList(),
                                 mode = mode,
-                                notesCount = notesCount
+                                notesCount = bookWithStats.notesCount,
+                                firstReadingDate = bookWithStats.firstReadingDate,
+                                lastReadingDate = bookWithStats.lastReadingDate,
+                                finishedDate = bookWithStats.finishedDate
                             )
                         }
                         BookDetailMode.SEARCH -> {

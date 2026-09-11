@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.readtracker.android.domain.entity.book.BookEntity
+import com.example.readtracker.android.domain.entity.book.BookWithNoteStatsData
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -34,4 +35,33 @@ interface BookDao {
 
     @Query("DELETE FROM books WHERE id = :bookId")
     suspend fun deleteBook(bookId: String)
+
+    @Query("""
+    SELECT 
+        books.*, 
+        COUNT(DISTINCT notes.id) AS notesCount, 
+        MIN(stats.timestamp) AS firstReadingDate, 
+        MAX(stats.timestamp) AS lastReadingDate,
+        MAX(CASE WHEN stats.statusChangedTo = 'FINISHED' THEN stats.timestamp END) AS finishedDate
+    FROM books 
+    LEFT JOIN notes ON books.id = notes.bookId 
+    LEFT JOIN stats ON books.id = stats.bookId
+    GROUP BY books.id
+""")
+    suspend fun getAllBooksWithFullStats(): List<BookWithNoteStatsData>
+
+    @Query("""
+    SELECT 
+        books.*, 
+        COUNT(DISTINCT notes.id) AS notesCount, 
+        MIN(stats.timestamp) AS firstReadingDate, 
+        MAX(stats.timestamp) AS lastReadingDate,
+        MAX(CASE WHEN stats.statusChangedTo = 'FINISHED' THEN stats.timestamp END) AS finishedDate
+    FROM books 
+    LEFT JOIN notes ON books.id = notes.bookId 
+    LEFT JOIN stats ON books.id = stats.bookId
+    WHERE books.id = :bookId
+    GROUP BY books.id
+""")
+    suspend fun getBookWithFullStatsById(bookId: String): BookWithNoteStatsData?
 }

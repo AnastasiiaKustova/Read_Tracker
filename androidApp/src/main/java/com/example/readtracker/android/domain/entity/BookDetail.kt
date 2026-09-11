@@ -10,4 +10,7 @@ data class BookDetail(
     val categories: List<CategoryItem>,
     val mode: BookDetailMode,
     val notesCount: Int = 0,
+    val firstReadingDate: Long? = null,
+    val lastReadingDate: Long? = null,
+    val finishedDate: Long? = null
 )

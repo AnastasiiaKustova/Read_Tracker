@@ -1,22 +1,24 @@
 package com.example.readtracker.android.presentation.statsScreen
 
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.example.readtracker.android.domain.entity.PeriodTab
 import com.example.readtracker.android.domain.entity.StatsDetailForTrackerPeriod
+import com.example.readtracker.android.presentation.ui.PieChart
+import com.example.readtracker.android.presentation.ui.prepareStatsForPieChart
 import java.util.Calendar
 import java.util.Date
 
@@ -101,6 +103,10 @@ fun TrackerPeriodContent(
         else -> false
     }
 
+    val chartDataByBooks = prepareStatsForPieChart(state.activities) { readStat ->
+        readStat.book.title
+    }
+
     // --- 3. ВЕРСТКА ЭКРАНА С ИСПРАВЛЕННЫМИ НАПРАВЛЕНИЯМИ ПАЛЬЦА ---
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -115,6 +121,10 @@ fun TrackerPeriodContent(
                 selectedDate = selectedDate,
                 selectedTab = selectedTab
             )
+        }
+
+        item {
+            PieChart(dataList = chartDataByBooks)
         }
 
         item {
