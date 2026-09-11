@@ -7,20 +7,29 @@ import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import com.example.readtracker.android.domain.entity.book.Book
 import com.example.readtracker.android.domain.entity.note.AddNoteInput
+import com.example.readtracker.android.domain.entity.tag.AddTagInput
 import com.example.readtracker.android.domain.entity.tag.Tag
 import com.example.readtracker.android.domain.useCases.AddNoteUseCase
+import com.example.readtracker.android.domain.useCases.AddTagUseCase
 import com.example.readtracker.android.domain.useCases.GetBookByIdUseCase
 import com.example.readtracker.android.domain.useCases.GetTagsUseCase
+import com.example.readtracker.android.domain.useCases.ObserveNoteScreenDataUseCase
 import com.example.readtracker.android.presentation.addNoteScreen.AddNoteScreenStore.Intent
 import com.example.readtracker.android.presentation.addNoteScreen.AddNoteScreenStore.Label
 import com.example.readtracker.android.presentation.addNoteScreen.AddNoteScreenStore.State
+import com.example.readtracker.android.presentation.addNoteScreen.AddNoteScreenStore.State.ScreenState.*
+import com.example.readtracker.android.presentation.addNoteScreen.AddNoteScreenStoreFactory.Msg.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 interface AddNoteScreenStore : Store<Intent, State, Label> {
 
     sealed interface Intent {
         data class ClickSave(val addNoteInput: AddNoteInput) : Intent
+        data class ClickAddTag(val addTagInput: AddTagInput) : Intent
         data class UpdateSelectedBook(val id: String) : Intent
         data object ClickSelectBook : Intent
     }
@@ -52,8 +61,9 @@ interface AddNoteScreenStore : Store<Intent, State, Label> {
 class AddNoteScreenStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
     private val addNoteUseCase: AddNoteUseCase,
-    private val getTagsUseCase: GetTagsUseCase,
+    private val addTagUseCase: AddTagUseCase,
     private val getBookByIdUseCase: GetBookByIdUseCase,
+    private val observeNoteScreenDataUseCase: ObserveNoteScreenDataUseCase
 ) {
 
     fun create(): AddNoteScreenStore =
@@ -73,6 +83,8 @@ class AddNoteScreenStoreFactory @Inject constructor(
         data object ScreenLoading : Action
 
         data object ScreenError : Action
+
+        data class TagsInternalUpdated(val tags: Set<Tag>) : Action
     }
 
     private sealed interface Msg {
@@ -82,15 +94,43 @@ class AddNoteScreenStoreFactory @Inject constructor(
         data object ScreenLoading : Msg
 
         data object ScreenError : Msg
+
+        data class BookUpdated(val selectedBook: Book?) : Msg
+
+        data class BookTagsUpdated(val allAvailableTags: Set<Tag>) : Msg
     }
 
     private inner class BootstrapperImpl : CoroutineBootstrapper<Action>() {
         override fun invoke() {
             scope.launch {
                 dispatch(Action.ScreenLoading)
+            }
+
+            scope.launch {
                 try {
-                    val allAvailableTags = getTagsUseCase()
-                    dispatch(Action.ScreenLoaded(null, allAvailableTags))
+                    var isFirstLoad = true // Флаг для отслеживания первой загрузки
+
+                    withContext(Dispatchers.IO) {
+                        observeNoteScreenDataUseCase()
+                            .distinctUntilChanged()
+                            .collect { noteScreenItem ->
+                                withContext(Dispatchers.Main) {
+                                    if (isFirstLoad) {
+                                        // 1. При самом первом получении данных переводим экран в состояние Loaded
+                                        dispatch(
+                                            Action.ScreenLoaded(
+                                                selectedBook = null, // Изначально книга не выбрана
+                                                allAvailableTags = noteScreenItem.tags
+                                            )
+                                        )
+                                        isFirstLoad = false // Сбрасываем флаг
+                                    } else {
+                                        // 2. Все последующие разы (например, при создании нового тега) обновляем ТОЛЬКО теги
+                                        dispatch(Action.TagsInternalUpdated(noteScreenItem.tags))
+                                    }
+                                }
+                            }
+                    }
                 } catch (e: Exception) {
                     dispatch(Action.ScreenError)
                 }
@@ -101,14 +141,24 @@ class AddNoteScreenStoreFactory @Inject constructor(
     private object ReducerImpl : Reducer<State, Msg> {
         override fun State.reduce(msg: Msg): State {
             return when (msg) {
-                Msg.ScreenError -> copy(screenState = State.ScreenState.Error)
-                Msg.ScreenLoading -> copy(screenState = State.ScreenState.Loading)
-                is Msg.ScreenLoaded -> copy(
-                    screenState = State.ScreenState.Loaded(
+                ScreenError -> copy(screenState = Error)
+                ScreenLoading -> copy(screenState = Loading)
+                is ScreenLoaded -> copy(
+                    screenState = Loaded(
                         msg.selectedBook,
                         msg.allAvailableTags
                     )
                 )
+
+                is BookUpdated -> {
+                    val current = screenState as? Loaded ?: return this
+                    copy(screenState = current.copy(selectedBook = msg.selectedBook))
+                }
+
+                is BookTagsUpdated -> {
+                    val current = screenState as? State.ScreenState.Loaded ?: return this
+                    copy(screenState = current.copy(allAvailableTags = msg.allAvailableTags))
+                }
             }
         }
     }
@@ -117,16 +167,18 @@ class AddNoteScreenStoreFactory @Inject constructor(
         override fun executeAction(action: Action) {
             when (action) {
                 is Action.ScreenLoaded -> dispatch(
-                    Msg.ScreenLoaded(action.selectedBook, action.allAvailableTags)
+                    ScreenLoaded(action.selectedBook, action.allAvailableTags)
                 )
 
                 Action.ScreenError -> dispatch(
-                    Msg.ScreenError
+                    ScreenError
                 )
 
                 Action.ScreenLoading -> dispatch(
-                    Msg.ScreenLoading
+                    ScreenLoading
                 )
+
+                is Action.TagsInternalUpdated -> dispatch(Msg.BookTagsUpdated(action.tags))
             }
         }
 
@@ -142,13 +194,15 @@ class AddNoteScreenStoreFactory @Inject constructor(
                 Intent.ClickSelectBook -> publish(Label.ClickSelectBook)
                 is Intent.UpdateSelectedBook -> {
                     scope.launch {
-                        val currentState = state().screenState
-                        if (currentState is State.ScreenState.Loaded) {
-                            val selectedBook = getBookByIdUseCase(intent.id)
-                            dispatch(Msg.ScreenLoaded(selectedBook, currentState.allAvailableTags))
-                        }
+                        val selectedBook = getBookByIdUseCase(intent.id)
+                        dispatch(Msg.BookUpdated(selectedBook))
                     }
                 }
+
+                is Intent.ClickAddTag ->
+                    scope.launch {
+                        addTagUseCase(intent.addTagInput)
+                    }
             }
         }
     }

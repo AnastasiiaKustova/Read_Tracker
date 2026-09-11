@@ -32,6 +32,7 @@ import com.example.readtracker.android.presentation.profileScreen.ProfileScreenC
 import com.example.readtracker.android.presentation.searchBookScreen.SearchBookScreenComponentImpl
 import com.example.readtracker.android.presentation.searchBookScreen.SearchBookScreenContent
 import com.example.readtracker.android.presentation.statsScreen.StatsScreenContent
+import com.example.readtracker.android.presentation.trackerScreen.ReadTrackerScreenContent
 import com.example.readtracker.android.presentation.ui.AppTheme
 
 @Composable
@@ -53,6 +54,7 @@ fun RootContent(component: RootComponent) {
         is RootComponent.Child.BookList -> BottomTab.MAIN
         is RootComponent.Child.AddCollection -> BottomTab.MAIN
         is RootComponent.Child.SearchBook -> BottomTab.MAIN
+        is RootComponent.Child.ReadTrackerScreen -> BottomTab.STATS
     }
 
     AppTheme {
@@ -116,6 +118,7 @@ fun RootContent(component: RootComponent) {
                         is RootComponent.Child.AddNote -> AddNoteScreenContent(component = instance.component)
                         is RootComponent.Child.AddCollection -> AddCollectionScreenContent(component = instance.component)
                         is RootComponent.Child.SearchBook -> SearchBookScreenContent(component = instance.component)
+                        is RootComponent.Child.ReadTrackerScreen -> ReadTrackerScreenContent(component = instance.component)
                     }
                 }
             }

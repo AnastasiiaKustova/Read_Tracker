@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.readtracker.android.core.formatTimestamp
 import com.example.readtracker.android.domain.entity.note.Note
 import com.example.readtracker.android.presentation.common.CommonError
 import com.example.readtracker.android.presentation.common.CommonInitial
@@ -231,7 +232,7 @@ fun NoteDetailScreen(
                     color = Color.Gray
                 )
                 Text(
-                    text = note.createdAt,
+                    text = note.createdAt.formatTimestamp(),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.DarkGray

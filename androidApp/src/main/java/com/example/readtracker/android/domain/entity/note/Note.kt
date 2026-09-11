@@ -11,5 +11,5 @@ data class Note (
     override val book: Book,
     override val tags: Set<Tag>,
     override val isPublic: Boolean,
-    val createdAt: String,
+    val createdAt: Long,
 ) : NoteFields

@@ -20,6 +20,7 @@ import com.example.readtracker.android.presentation.noteScreen.NoteScreenCompone
 import com.example.readtracker.android.presentation.profileScreen.ProfileScreenComponent
 import com.example.readtracker.android.presentation.searchBookScreen.SearchBookScreenComponent
 import com.example.readtracker.android.presentation.statsScreen.StatsScreenComponent
+import com.example.readtracker.android.presentation.trackerScreen.ReadTrackerScreenComponent
 import kotlinx.parcelize.Parcelize
 
 interface RootComponent {
@@ -39,6 +40,8 @@ interface RootComponent {
     fun onBookClicked(bookItem: BookItem, onChooseClicked: (BookItem) -> Unit)
 
     fun onNoteClicked(bookId: String)
+
+    fun onStartReadingClicked(bookId: String)
 
     fun onSearchLitresClicked(onChooseClicked: (BookItem) -> Unit)
 
@@ -61,6 +64,7 @@ interface RootComponent {
             @Transient val onChooseClicked: ((BookItem) -> Unit)? = null
         ) : Configuration()
         @Parcelize data class NoteDetail(val noteId: String) : Configuration()
+        @Parcelize data class ReadTracker(val bookId: String) : Configuration()
         @Parcelize data class BookList(
             val collectionId: String?,
             val bookStatus: BookStatus?,
@@ -87,5 +91,6 @@ interface RootComponent {
         class AddNote(val component: AddNoteScreenComponent) : Child
         class AddCollection(val component: AddCollectionScreenComponent) : Child
         class SearchBook(val component: SearchBookScreenComponent) : Child
+        class ReadTrackerScreen(val component: ReadTrackerScreenComponent) : Child
     }
 }

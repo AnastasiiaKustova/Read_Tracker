@@ -115,7 +115,7 @@ private fun StatsScreen(
                         coverUri = book.picture?.let { Uri.parse(it) },
                         totalPages = 0,
                         currentPage = 0,
-                        quotesCount = 0,
+                        rating = 0,
                         series = book.series ?: "",
                         idLitres = book.id,
                         bookStatus = BookStatus.READING

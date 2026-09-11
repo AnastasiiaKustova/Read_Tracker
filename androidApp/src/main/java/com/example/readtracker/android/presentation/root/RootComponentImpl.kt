@@ -36,8 +36,10 @@ import com.example.readtracker.android.presentation.root.RootComponent.Child.Not
 import com.example.readtracker.android.presentation.root.RootComponent.Child.ProfileScreen
 import com.example.readtracker.android.presentation.root.RootComponent.Child.StatsScreen
 import com.example.readtracker.android.presentation.root.RootComponent.Child.SearchBook
+import com.example.readtracker.android.presentation.root.RootComponent.Child.ReadTrackerScreen
 import com.example.readtracker.android.presentation.searchBookScreen.SearchBookScreenComponentImpl
 import com.example.readtracker.android.presentation.statsScreen.StatsScreenComponentImpl
+import com.example.readtracker.android.presentation.trackerScreen.ReadTrackerScreenComponentImpl
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -56,6 +58,7 @@ class RootComponentImpl @AssistedInject constructor(
     private val addNoteScreenComponentImplFactory: AddNoteScreenComponentImpl.Factory,
     private val addCollectionScreenComponentImplFactory: AddCollectionScreenComponentImpl.Factory,
     private val searchBookScreenComponentImplFactory: SearchBookScreenComponentImpl.Factory,
+    private val readTrackerScreenComponentImplFactory: ReadTrackerScreenComponentImpl.Factory,
     @Assisted("onExitApp") private val onExitApp: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext
 ) : RootComponent, ComponentContext by componentContext {
@@ -122,6 +125,10 @@ class RootComponentImpl @AssistedInject constructor(
 
     override fun onNoteClicked(noteId: String) {
         navigation.push(RootComponent.Configuration.NoteDetail(noteId))
+    }
+
+    override fun onStartReadingClicked(bookId: String) {
+        navigation.push(RootComponent.Configuration.ReadTracker(bookId))
     }
 
     override fun onSearchLitresClicked(onChooseClicked: (BookItem) -> Unit) {
@@ -221,6 +228,7 @@ class RootComponentImpl @AssistedInject constructor(
                         // чтобы пользователь мгновенно оказался на Экране 1 (Добавление книги)
                         navigation.popWhile { it is RootComponent.Configuration.SearchBook || it is RootComponent.Configuration.BookDetail }
                     },
+                    onStartReadingClicked = { book -> onStartReadingClicked(book.id)},
                     componentContext = componentContext
                 )
                 BookDetail(component)
@@ -328,6 +336,15 @@ class RootComponentImpl @AssistedInject constructor(
                     componentContext = componentContext
                 )
                 SearchBook(component)
+            }
+
+            is RootComponent.Configuration.ReadTracker -> {
+                val component = readTrackerScreenComponentImplFactory.create(
+                    onBackClicked = { navigation.pop() },
+                    bookId = config.bookId,
+                    componentContext = componentContext
+                )
+                ReadTrackerScreen(component)
             }
         }
     }

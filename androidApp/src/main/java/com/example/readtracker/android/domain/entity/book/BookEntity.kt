@@ -14,6 +14,6 @@ data class BookEntity(
     val coverUriString: String?,
     val totalPages: Int,
     val currentPage: Int,
-    val quotesCount: Int,
+    val rating: Int,
     val bookStatusString: String
 )

@@ -48,7 +48,6 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.androidx.activity.compose)
     debugImplementation(libs.compose.ui.tooling)
-
     implementation(libs.androidx.datastore)
     implementation(libs.androidx.livedata)
     implementation(libs.gson)

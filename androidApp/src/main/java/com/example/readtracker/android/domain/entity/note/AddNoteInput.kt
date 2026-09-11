@@ -12,7 +12,7 @@ data class AddNoteInput(
     override val isPublic: Boolean
 ) : NoteFields
 
-fun AddNoteInput.toNote(id: String, createdAt: String): Note {
+fun AddNoteInput.toNote(id: String, createdAt: Long): Note {
     return Note(
         id = id,
         quoteText = this. quoteText,

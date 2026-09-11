@@ -6,6 +6,7 @@ import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.readtracker.android.domain.entity.note.AddNoteInput
+import com.example.readtracker.android.domain.entity.tag.AddTagInput
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -57,6 +58,10 @@ class AddNoteScreenComponentImpl @AssistedInject constructor(
 
     override fun onSaveClick(addNoteInput: AddNoteInput) {
         store.accept(AddNoteScreenStore.Intent.ClickSave(addNoteInput))
+    }
+
+    override fun onAddTagClick(addTagInput: AddTagInput) {
+        store.accept(AddNoteScreenStore.Intent.ClickAddTag(addTagInput))
     }
 
     override fun onBookSelected(bookId: String) {

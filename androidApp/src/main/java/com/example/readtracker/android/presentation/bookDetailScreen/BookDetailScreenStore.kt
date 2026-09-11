@@ -10,11 +10,16 @@ import com.example.readtracker.android.domain.entity.BookDetail
 import com.example.readtracker.android.domain.entity.BookDetailMode
 import com.example.readtracker.android.domain.entity.database.BookItem
 import com.example.readtracker.android.domain.entity.BookStatus
-import com.example.readtracker.android.domain.useCases.GetBookByIdUseCase
+import com.example.readtracker.android.domain.entity.note.AddNoteInput
+import com.example.readtracker.android.domain.entity.stats.AddStatsInput
 import com.example.readtracker.android.domain.useCases.SearchCategoriesUseCase
+import com.example.readtracker.android.domain.useCases.AddActivityUseCase
+import com.example.readtracker.android.domain.useCases.AddNoteUseCase
+import com.example.readtracker.android.domain.useCases.GetBookWithStatsByIdUseCase
 import com.example.readtracker.android.domain.useCases.UpdateBookUseCase
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.Intent
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.Label
+import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.Label.*
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStore.State
 import com.example.readtracker.android.presentation.bookDetailScreen.BookDetailScreenStoreFactory.Msg.*
 import kotlinx.coroutines.Dispatchers
@@ -26,8 +31,10 @@ interface BookDetailScreenStore : Store<Intent, State, Label> {
     sealed interface Intent {
         data class ClickEditBook(val book: Book)  : Intent
         data class ClickChangeStatus(val newStatus: BookStatus) : Intent
+        data class ClickBookCompleted(val rating: Int, val note: String) : Intent
         data class ClickChoose(val bookItem: BookItem) : Intent
         data class ClickUpdatePage(val newPage: Int) : Intent
+        data class ClickStartReading(val book: Book) : Intent
     }
 
     data class State(
@@ -50,15 +57,19 @@ interface BookDetailScreenStore : Store<Intent, State, Label> {
     sealed interface Label {
         data class ClickEditBook(val book: Book) : Label
         data class ClickChoose(val bookItem: BookItem) : Label
+        data class ClickStartReading(val book: Book) : Label
     }
 }
 
 class BookDetailScreenStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
-    private val getBookByIdUseCase: GetBookByIdUseCase,
+    private val getBookByIdUseCase: GetBookWithStatsByIdUseCase,
     private val updateBookUseCase: UpdateBookUseCase,
-    private val searchCategoriesUseCase: SearchCategoriesUseCase
-) {
+    private val searchCategoriesUseCase: SearchCategoriesUseCase,
+    private val addActivityUseCase: AddActivityUseCase,
+    private val addNoteUseCase: AddNoteUseCase,
+
+    ) {
     fun create(bookId: String?, bookItem: BookItem?, mode: BookDetailMode): BookDetailScreenStore =
         object : BookDetailScreenStore, Store<Intent, State, Label> by storeFactory.create(
             name = "BookDetailScreenStore",
@@ -98,12 +109,16 @@ class BookDetailScreenStoreFactory @Inject constructor(
                 try {
                     val bookDetail = when (mode){
                         BookDetailMode.VIEW -> {
-                            val book = if (bookId == null) {throw Exception("Error") } else { getBookByIdUseCase(bookId) }
+                            val bookWithStats = if (bookId == null) {throw Exception("Error") } else { getBookByIdUseCase(bookId) }
                             BookDetail(
-                                book = book,
+                                book = bookWithStats.book,
                                 bookItem = null,
                                 categories = emptyList(),
-                                mode = mode
+                                mode = mode,
+                                notesCount = bookWithStats.notesCount,
+                                firstReadingDate = bookWithStats.firstReadingDate,
+                                lastReadingDate = bookWithStats.lastReadingDate,
+                                finishedDate = bookWithStats.finishedDate
                             )
                         }
                         BookDetailMode.SEARCH -> {
@@ -140,7 +155,7 @@ class BookDetailScreenStoreFactory @Inject constructor(
     private inner class ExecutorImpl : CoroutineExecutor<Intent, Action, State, Msg, Label>() {
         override fun executeIntent(intent: Intent) {
             when (intent) {
-                is Intent.ClickEditBook -> publish(Label.ClickEditBook(intent.book))
+                is Intent.ClickEditBook -> publish(ClickEditBook(intent.book))
                 is Intent.ClickChangeStatus -> {
                     scope.launch {
                         val currentScreenState = state().screenState
@@ -163,12 +178,20 @@ class BookDetailScreenStoreFactory @Inject constructor(
 
                                 withContext(Dispatchers.IO) {
                                     updateBookUseCase(updatedBook)
+                                    addActivityUseCase(
+                                        AddStatsInput(
+                                            book = updatedBook,
+                                            pagesRead = newPage - currentBook.currentPage,
+                                            durationMinutes = 0,
+                                            statusChangedTo = intent.newStatus
+                                        )
+                                    )
                                 }
 
                                 dispatch(ScreenLoaded(bookDetail = bookDetail.copy(book = updatedBook)))
 
                             } catch (e: Exception) {
-                                dispatch(Msg.ScreenError)
+                                dispatch(ScreenError)
                             }
                         }
                     }
@@ -198,18 +221,64 @@ class BookDetailScreenStoreFactory @Inject constructor(
 
                                 withContext(Dispatchers.IO) {
                                     updateBookUseCase(updatedBook)
+                                    addActivityUseCase(
+                                        AddStatsInput(
+                                            book = updatedBook,
+                                            pagesRead = intent.newPage - currentBook.currentPage,
+                                            durationMinutes = 0,
+                                            statusChangedTo = if (currentBook.bookStatus == newStatus) null else newStatus
+                                        )
+                                    )
                                 }
 
                                 dispatch(ScreenLoaded(bookDetail = bookDetail.copy(book = updatedBook)))
 
                             } catch (e: Exception) {
-                                dispatch(Msg.ScreenError)
+                                dispatch(ScreenError)
                             }
                         }
                     }
                 }
 
-                is Intent.ClickChoose -> publish(Label.ClickChoose(intent.bookItem))
+                is Intent.ClickChoose -> publish(ClickChoose(intent.bookItem))
+                is Intent.ClickBookCompleted -> {
+                    scope.launch {
+                        val currentScreenState = state().screenState
+
+                        if (currentScreenState is State.ScreenState.Loaded) {
+                            try {
+                                val bookDetail = currentScreenState.bookDetail
+                                val currentBook = bookDetail.book ?: throw Exception("Error")
+
+                                val updatedBook = currentBook.copy(
+                                    rating = intent.rating,
+                                )
+
+                                withContext(Dispatchers.IO) {
+                                    updateBookUseCase(updatedBook)
+                                    if (intent.note.isNotEmpty())
+                                        addNoteUseCase(
+                                            AddNoteInput(
+                                                quoteText = null,
+                                                pageNumber = null,
+                                                userComment = intent.note,
+                                                book = updatedBook,
+                                                tags = emptySet(),
+                                                isPublic = false
+                                            )
+                                        )
+                                }
+
+                                dispatch(ScreenLoaded(bookDetail = bookDetail.copy(book = updatedBook)))
+
+                            } catch (e: Exception) {
+                                dispatch(ScreenError)
+                            }
+                        }
+                    }
+                }
+
+                is Intent.ClickStartReading -> publish(ClickStartReading(intent.book))
             }
         }
 

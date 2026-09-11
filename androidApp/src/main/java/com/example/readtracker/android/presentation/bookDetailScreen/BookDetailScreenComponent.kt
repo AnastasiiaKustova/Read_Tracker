@@ -13,7 +13,11 @@ interface BookDetailScreenComponent {
 
     fun onChangeStatusClick(newStatus: BookStatus)
 
+    fun onBookCompleted(rating: Int, note: String)
+
     fun onUpdatePageClick(newPage: Int)
 
     fun onChooseClick(bookItem: BookItem)
+
+    fun onStartReadingClick(book: Book)
 }

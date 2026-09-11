@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import com.example.readtracker.android.core.formatWithSpace
+import com.example.readtracker.android.domain.entity.BookDetail
 import com.example.readtracker.android.domain.entity.book.Book
 import com.example.readtracker.android.domain.entity.BookDetailMode
 import com.example.readtracker.android.domain.entity.database.BookItem
@@ -55,6 +57,7 @@ import com.example.readtracker.android.domain.entity.database.CategoryItem
 import com.example.readtracker.android.presentation.common.CommonError
 import com.example.readtracker.android.presentation.common.CommonInitial
 import com.example.readtracker.android.presentation.common.CommonLoading
+import com.example.readtracker.android.presentation.ui.BookRatingBlock
 import com.example.readtracker.android.presentation.ui.ChangeStatusDialog
 import com.example.readtracker.android.presentation.ui.StatItem
 import com.example.readtracker.android.presentation.ui.UpdatePageDialog
@@ -79,15 +82,18 @@ fun BookDetailScreenContent(component: BookDetailScreenComponent) {
                         if (bookDetail.book == null) CommonError()
                         else
                             BookDetailScreen(
-                                book = bookDetail.book,
-                                categories = bookDetail.categories,
+                                bookDetail = bookDetail,
                                 onEditBookClick = { component.onEditBookClick(bookDetail.book) },
                                 onUpdatePageClick = { newPage -> component.onUpdatePageClick(newPage) },
                                 onChangeStatusClick = { newStatus ->
                                     component.onChangeStatusClick(
                                         newStatus
                                     )
-                                }
+                                },
+                                onBookCompleted = { rating: Int, note: String ->
+                                    component.onBookCompleted(rating, note)
+                                },
+                                onStartReading = { component.onStartReadingClick(bookDetail.book) }
                             )
                     }
 
@@ -113,13 +119,16 @@ fun BookDetailScreenContent(component: BookDetailScreenComponent) {
 
 @Composable
 fun BookDetailScreen(
-    book: Book,
-    categories: List<CategoryItem>,
+    bookDetail: BookDetail,
     onEditBookClick: () -> Unit,       // Лямбда для карандашика редактирования
     onChangeStatusClick: (BookStatus) -> Unit,   // Лямбда для кнопки смены статуса
     onUpdatePageClick: (Int) -> Unit,     // Лямбда для кнопки ввода страницы
+    onBookCompleted: (rating: Int, note: String) -> Unit,
+    onStartReading: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val book = bookDetail.book ?: throw Exception("Error")
+
     val scrollState = rememberScrollState()
     val progress = if (book.totalPages > 0) book.currentPage.toFloat() / book.totalPages else 0f
     val percentage = round((progress * 100)).toInt()
@@ -137,8 +146,10 @@ fun BookDetailScreen(
                 onStatusSelected = { newStatus ->
                     showChangeStatusDialog = false
                     onChangeStatusClick(newStatus)
-                    // TODO: Отправить Интент во МВИ стор для сохранения нового статуса в базу данных
-                    android.util.Log.d("APP_DEBUG", "Выбран новый статус книги: $newStatus")
+                },
+                onBookCompleted = { rating: Int, note: String ->
+                    showChangeStatusDialog = false
+                    onBookCompleted(rating, note)
                 }
             )
         }
@@ -152,8 +163,6 @@ fun BookDetailScreen(
                 onConfirm = { newPage ->
                     showUpdatePageDialog = false
                     onUpdatePageClick(newPage)
-                    // TODO: Отправить Интент во МВИ стор для сохранения новой страницы в базу данных
-                    Log.d("APP_DEBUG", "Пользователь ввел корректную страницу: $newPage")
                 }
             )
         }
@@ -192,7 +201,8 @@ fun BookDetailScreen(
                             if (book.coverUri != null && book.coverUri.scheme == "file") {
                                 File(URI(book.coverUri.toString())).lastModified().toString()
                             } else {
-                                System.currentTimeMillis().toString() // Для сети генерируем свежий ключ
+                                System.currentTimeMillis()
+                                    .toString() // Для сети генерируем свежий ключ
                             }
                         } catch (e: Exception) {
                             ""
@@ -245,7 +255,16 @@ fun BookDetailScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StatItem(value = book.totalPages.formatWithSpace(), label = "Страниц")
-                StatItem(value = book.quotesCount.toString(), label = "Заметок")
+                StatItem(value = bookDetail.notesCount.toString(), label = "Заметок")
+            }
+
+            if (bookDetail.firstReadingDate != null && bookDetail.lastReadingDate != null) {
+                Spacer(modifier = Modifier.height(24.dp))
+                ReadingTimeline(
+                    firstReadingDate = bookDetail.firstReadingDate,
+                    lastReadingDate = bookDetail.lastReadingDate,
+                    finishedDate = bookDetail.finishedDate
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -286,6 +305,12 @@ fun BookDetailScreen(
                     color = Color.Gray
                 )
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            BookRatingBlock(
+                rating = book.rating, // Передаем оценку (Float или null)
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -350,6 +375,36 @@ fun BookDetailScreen(
                             color = Color.Black
                         )
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFFE5E5E5))
+                    .clickable { onStartReading() },
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        tint = Color.Black,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "Начать чтение",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
+                    )
                 }
             }
 

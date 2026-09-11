@@ -24,7 +24,7 @@ fun AddBookInput.toBook(id: String, status: BookStatus = BookStatus.READING): Bo
         series = this.series,
         idLitres = this.idLitres,
         currentPage = 0,
-        quotesCount = 0,
+        rating = 0,
         bookStatus = status
     )
 }
